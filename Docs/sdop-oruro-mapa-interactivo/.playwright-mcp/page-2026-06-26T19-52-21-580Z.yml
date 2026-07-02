@@ -1,0 +1,411 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: GO
+      - generic [ref=e6]:
+        - strong [ref=e7]: Gobernación de Oruro
+        - generic [ref=e8]: Mapa Territorial Inteligente
+    - generic [ref=e9]:
+      - generic [ref=e10]: ⌕
+      - searchbox "⌕" [ref=e472]
+    - generic [ref=e12]:
+      - button "◐" [active] [ref=e13] [cursor=pointer]
+      - button "Mapa Territorial" [ref=e14] [cursor=pointer]:
+        - generic [ref=e15]: Mapa
+        - generic [ref=e16]: Territorial
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - paragraph [ref=e20]: Carátula territorial interactiva
+        - heading "Mapa inteligente de municipios de Oruro" [level=1] [ref=e21]
+        - paragraph [ref=e22]: "La portada queda centrada en el territorio: puntos municipales, selección por provincia, ficha técnica, línea de conexión a Oruro, proyectos destacados, estados y evidencia visual."
+      - generic [ref=e23]:
+        - generic [ref=e474]:
+          - strong [ref=e475]: "16"
+          - generic [ref=e476]: Provincias
+        - generic [ref=e477]:
+          - strong [ref=e478]: "35"
+          - generic [ref=e479]: Municipios
+        - generic [ref=e480]:
+          - strong [ref=e481]: "162"
+          - generic [ref=e482]: Proyectos
+        - generic [ref=e483]:
+          - strong [ref=e484]: 60%
+          - generic [ref=e485]: Avance prom.
+        - generic [ref=e486]:
+          - strong [ref=e487]: "11"
+          - generic [ref=e488]: Revisión
+    - generic [ref=e39]:
+      - complementary [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - paragraph [ref=e43]: Municipios
+            - heading "Listado territorial" [level=2] [ref=e44]
+          - combobox "Filtrar por estado" [ref=e45]:
+            - option "Todos" [selected]
+            - option "Normal"
+            - option "Observado"
+            - option "Alerta"
+            - option "Concluido"
+        - generic [ref=e46]:
+          - button "Oruro Cercado • Dirección 78%" [ref=e489] [cursor=pointer]:
+            - generic [ref=e491]:
+              - strong [ref=e492]: Oruro
+              - generic [ref=e493]: Cercado • Dirección
+            - generic [ref=e494]: 78%
+          - button "Caracollo Cercado • UDETRA 64%" [ref=e495] [cursor=pointer]:
+            - generic [ref=e497]:
+              - strong [ref=e498]: Caracollo
+              - generic [ref=e499]: Cercado • UDETRA
+            - generic [ref=e500]: 64%
+          - button "El Choro Cercado • GF 46%" [ref=e501] [cursor=pointer]:
+            - generic [ref=e503]:
+              - strong [ref=e504]: El Choro
+              - generic [ref=e505]: Cercado • GF
+            - generic [ref=e506]: 46%
+          - button "Soracachi Cercado • UPRAC 59%" [ref=e507] [cursor=pointer]:
+            - generic [ref=e509]:
+              - strong [ref=e510]: Soracachi
+              - generic [ref=e511]: Cercado • UPRAC
+            - generic [ref=e512]: 59%
+          - button "Challapata Abaroa • Dirección 69%" [ref=e513] [cursor=pointer]:
+            - generic [ref=e515]:
+              - strong [ref=e516]: Challapata
+              - generic [ref=e517]: Abaroa • Dirección
+            - generic [ref=e518]: 69%
+          - button "Santuario de Quillacas Abaroa • GF 48%" [ref=e519] [cursor=pointer]:
+            - generic [ref=e521]:
+              - strong [ref=e522]: Santuario de Quillacas
+              - generic [ref=e523]: Abaroa • GF
+            - generic [ref=e524]: 48%
+          - button "Corque Carangas • UPRAC 62%" [ref=e525] [cursor=pointer]:
+            - generic [ref=e527]:
+              - strong [ref=e528]: Corque
+              - generic [ref=e529]: Carangas • UPRAC
+            - generic [ref=e530]: 62%
+          - button "Choquecota Carangas • UPRAC 57%" [ref=e531] [cursor=pointer]:
+            - generic [ref=e533]:
+              - strong [ref=e534]: Choquecota
+              - generic [ref=e535]: Carangas • UPRAC
+            - generic [ref=e536]: 57%
+          - button "Salinas de Garci Mendoza Ladislao Cabrera • GF 34%" [ref=e537] [cursor=pointer]:
+            - generic [ref=e539]:
+              - strong [ref=e540]: Salinas de Garci Mendoza
+              - generic [ref=e541]: Ladislao Cabrera • GF
+            - generic [ref=e542]: 34%
+          - button "Pampa Aullagas Ladislao Cabrera • UPRAC 31%" [ref=e543] [cursor=pointer]:
+            - generic [ref=e545]:
+              - strong [ref=e546]: Pampa Aullagas
+              - generic [ref=e547]: Ladislao Cabrera • UPRAC
+            - generic [ref=e548]: 31%
+          - button "Huachacalla Litoral • UNASBI 53%" [ref=e549] [cursor=pointer]:
+            - generic [ref=e551]:
+              - strong [ref=e552]: Huachacalla
+              - generic [ref=e553]: Litoral • UNASBI
+            - generic [ref=e554]: 53%
+          - button "Escara Litoral • Dirección 61%" [ref=e555] [cursor=pointer]:
+            - generic [ref=e557]:
+              - strong [ref=e558]: Escara
+              - generic [ref=e559]: Litoral • Dirección
+            - generic [ref=e560]: 61%
+          - button "Cruz de Machacamarca Litoral • UDETRA 56%" [ref=e561] [cursor=pointer]:
+            - generic [ref=e563]:
+              - strong [ref=e564]: Cruz de Machacamarca
+              - generic [ref=e565]: Litoral • UDETRA
+            - generic [ref=e566]: 56%
+          - button "Yunguyo de Litoral Litoral • GF 44%" [ref=e567] [cursor=pointer]:
+            - generic [ref=e569]:
+              - strong [ref=e570]: Yunguyo de Litoral
+              - generic [ref=e571]: Litoral • GF
+            - generic [ref=e572]: 44%
+          - button "Esmeralda Litoral • Dirección 63%" [ref=e573] [cursor=pointer]:
+            - generic [ref=e575]:
+              - strong [ref=e576]: Esmeralda
+              - generic [ref=e577]: Litoral • Dirección
+            - generic [ref=e578]: 63%
+          - button "La Rivera Mejillones • Dirección 62%" [ref=e579] [cursor=pointer]:
+            - generic [ref=e581]:
+              - strong [ref=e582]: La Rivera
+              - generic [ref=e583]: Mejillones • Dirección
+            - generic [ref=e584]: 62%
+          - button "Todos Santos Mejillones • UDETRA 58%" [ref=e585] [cursor=pointer]:
+            - generic [ref=e587]:
+              - strong [ref=e588]: Todos Santos
+              - generic [ref=e589]: Mejillones • UDETRA
+            - generic [ref=e590]: 58%
+          - button "Carangas Mejillones • GF 43%" [ref=e591] [cursor=pointer]:
+            - generic [ref=e593]:
+              - strong [ref=e594]: Carangas
+              - generic [ref=e595]: Mejillones • GF
+            - generic [ref=e596]: 43%
+          - button "Huayllamarca Nor Carangas • Dirección 59%" [ref=e597] [cursor=pointer]:
+            - generic [ref=e599]:
+              - strong [ref=e600]: Huayllamarca
+              - generic [ref=e601]: Nor Carangas • Dirección
+            - generic [ref=e602]: 59%
+          - button "Huanuni Pantaleón Dalence • CCIM 100%" [ref=e603] [cursor=pointer]:
+            - generic [ref=e605]:
+              - strong [ref=e606]: Huanuni
+              - generic [ref=e607]: Pantaleón Dalence • CCIM
+            - generic [ref=e608]: 100%
+          - button "Machacamarca Pantaleón Dalence • Dirección 67%" [ref=e609] [cursor=pointer]:
+            - generic [ref=e611]:
+              - strong [ref=e612]: Machacamarca
+              - generic [ref=e613]: Pantaleón Dalence • Dirección
+            - generic [ref=e614]: 67%
+          - button "Poopó Poopó • GF 44%" [ref=e615] [cursor=pointer]:
+            - generic [ref=e617]:
+              - strong [ref=e618]: Poopó
+              - generic [ref=e619]: Poopó • GF
+            - generic [ref=e620]: 44%
+          - button "Pazña Poopó • UDETRA 57%" [ref=e621] [cursor=pointer]:
+            - generic [ref=e623]:
+              - strong [ref=e624]: Pazña
+              - generic [ref=e625]: Poopó • UDETRA
+            - generic [ref=e626]: 57%
+          - button "Antequera Poopó • UPRAC 49%" [ref=e627] [cursor=pointer]:
+            - generic [ref=e629]:
+              - strong [ref=e630]: Antequera
+              - generic [ref=e631]: Poopó • UPRAC
+            - generic [ref=e632]: 49%
+          - button "Sabaya Sabaya • UNASBI 100%" [ref=e633] [cursor=pointer]:
+            - generic [ref=e635]:
+              - strong [ref=e636]: Sabaya
+              - generic [ref=e637]: Sabaya • UNASBI
+            - generic [ref=e638]: 100%
+          - button "Coipasa Sabaya • Dirección 64%" [ref=e639] [cursor=pointer]:
+            - generic [ref=e641]:
+              - strong [ref=e642]: Coipasa
+              - generic [ref=e643]: Sabaya • Dirección
+            - generic [ref=e644]: 64%
+          - button "Chipaya Sabaya • UNASBI 100%" [ref=e645] [cursor=pointer]:
+            - generic [ref=e647]:
+              - strong [ref=e648]: Chipaya
+              - generic [ref=e649]: Sabaya • UNASBI
+            - generic [ref=e650]: 100%
+          - button "Curahuara de Carangas Sajama • UDETRA 64%" [ref=e651] [cursor=pointer]:
+            - generic [ref=e653]:
+              - strong [ref=e654]: Curahuara de Carangas
+              - generic [ref=e655]: Sajama • UDETRA
+            - generic [ref=e656]: 64%
+          - button "Turco Sajama • UDETRA 55%" [ref=e657] [cursor=pointer]:
+            - generic [ref=e659]:
+              - strong [ref=e660]: Turco
+              - generic [ref=e661]: Sajama • UDETRA
+            - generic [ref=e662]: 55%
+          - button "Totora San Pedro de Totora • UPRAC 57%" [ref=e663] [cursor=pointer]:
+            - generic [ref=e665]:
+              - strong [ref=e666]: Totora
+              - generic [ref=e667]: San Pedro de Totora • UPRAC
+            - generic [ref=e668]: 57%
+          - button "Toledo Saucarí • UDETRA 55%" [ref=e669] [cursor=pointer]:
+            - generic [ref=e671]:
+              - strong [ref=e672]: Toledo
+              - generic [ref=e673]: Saucarí • UDETRA
+            - generic [ref=e674]: 55%
+          - button "Santiago de Huari Sebastián Pagador • UPRAC 28%" [ref=e675] [cursor=pointer]:
+            - generic [ref=e677]:
+              - strong [ref=e678]: Santiago de Huari
+              - generic [ref=e679]: Sebastián Pagador • UPRAC
+            - generic [ref=e680]: 28%
+          - button "Santiago de Andamarca Sud Carangas • UDETRA 100%" [ref=e681] [cursor=pointer]:
+            - generic [ref=e683]:
+              - strong [ref=e684]: Santiago de Andamarca
+              - generic [ref=e685]: Sud Carangas • UDETRA
+            - generic [ref=e686]: 100%
+          - button "Belén de Andamarca Sud Carangas • Dirección 69%" [ref=e687] [cursor=pointer]:
+            - generic [ref=e689]:
+              - strong [ref=e690]: Belén de Andamarca
+              - generic [ref=e691]: Sud Carangas • Dirección
+            - generic [ref=e692]: 69%
+          - button "Eucaliptus Tomás Barrón • GF 45%" [ref=e693] [cursor=pointer]:
+            - generic [ref=e695]:
+              - strong [ref=e696]: Eucaliptus
+              - generic [ref=e697]: Tomás Barrón • GF
+            - generic [ref=e698]: 45%
+      - article [ref=e257]:
+        - generic [ref=e258]:
+          - generic [ref=e259]:
+            - paragraph [ref=e260]: Centro de control territorial
+            - heading "Oruro en mapa dinámico" [level=2] [ref=e261]
+            - generic [ref=e262]: Huanuni seleccionado • Pantaleón Dalence • 46 km aprox. desde Oruro
+          - generic [ref=e263]:
+            - button "Centrar Oruro" [ref=e264] [cursor=pointer]
+            - button "Mostrar línea" [ref=e473] [cursor=pointer]
+            - button "Pantalla completa" [ref=e266] [cursor=pointer]
+            - generic [ref=e267]:
+              - generic [ref=e268]: "Capa:"
+              - button "OSM" [ref=e269] [cursor=pointer]
+              - button "Oscuro" [ref=e270] [cursor=pointer]
+              - button "Satélite" [ref=e271] [cursor=pointer]
+              - button "Topo" [ref=e272] [cursor=pointer]
+            - generic [ref=e273]:
+              - generic [ref=e274]: "Capas:"
+              - generic [ref=e275] [cursor=pointer]:
+                - checkbox "Polígonos" [checked] [ref=e276]
+                - text: Polígonos
+        - generic [ref=e277]:
+          - generic "Mapa interactivo de municipios de Oruro" [ref=e278]:
+            - generic:
+              - generic:
+                - button "GO" [ref=e280] [cursor=pointer]:
+                  - generic "Ciudad de Oruro" [ref=e281]:
+                    - generic [ref=e282]: GO
+                - button "Oruro" [ref=e699] [cursor=pointer]:
+                  - generic [ref=e700]: Oruro
+                - button "Caracollo" [ref=e701] [cursor=pointer]:
+                  - generic [ref=e702]: Caracollo
+                - button "El Choro" [ref=e703] [cursor=pointer]:
+                  - generic [ref=e704]: El Choro
+                - button "Soracachi" [ref=e705] [cursor=pointer]:
+                  - generic [ref=e706]: Soracachi
+                - button "Challapata" [ref=e707] [cursor=pointer]:
+                  - generic [ref=e708]: Challapata
+                - button "Santuario de Quillacas" [ref=e709] [cursor=pointer]:
+                  - generic [ref=e710]: Santuario de Quillacas
+                - button "Corque" [ref=e711] [cursor=pointer]:
+                  - generic [ref=e712]: Corque
+                - button "Choquecota" [ref=e713] [cursor=pointer]:
+                  - generic [ref=e714]: Choquecota
+                - button "Salinas de Garci Mendoza" [ref=e715] [cursor=pointer]:
+                  - generic [ref=e716]: Salinas de Garci Mendoza
+                - button "Pampa Aullagas" [ref=e717] [cursor=pointer]:
+                  - generic [ref=e718]: Pampa Aullagas
+                - button "Huachacalla" [ref=e719] [cursor=pointer]:
+                  - generic [ref=e720]: Huachacalla
+                - button "Escara" [ref=e721] [cursor=pointer]:
+                  - generic [ref=e722]: Escara
+                - button "Cruz de Machacamarca" [ref=e723] [cursor=pointer]:
+                  - generic [ref=e724]: Cruz de Machacamarca
+                - button "Yunguyo de Litoral" [ref=e725] [cursor=pointer]:
+                  - generic [ref=e726]: Yunguyo de Litoral
+                - button "Esmeralda" [ref=e727] [cursor=pointer]:
+                  - generic [ref=e728]: Esmeralda
+                - button "La Rivera" [ref=e729] [cursor=pointer]:
+                  - generic [ref=e730]: La Rivera
+                - button "Todos Santos" [ref=e731] [cursor=pointer]:
+                  - generic [ref=e732]: Todos Santos
+                - button "Carangas" [ref=e733] [cursor=pointer]:
+                  - generic [ref=e734]: Carangas
+                - button "Huayllamarca" [ref=e735] [cursor=pointer]:
+                  - generic [ref=e736]: Huayllamarca
+                - button "Huanuni" [ref=e737] [cursor=pointer]:
+                  - generic [ref=e738]: Huanuni
+                - button "Machacamarca" [ref=e739] [cursor=pointer]:
+                  - generic [ref=e740]: Machacamarca
+                - button "Poopó" [ref=e741] [cursor=pointer]:
+                  - generic [ref=e742]: Poopó
+                - button "Pazña" [ref=e743] [cursor=pointer]:
+                  - generic [ref=e744]: Pazña
+                - button "Antequera" [ref=e745] [cursor=pointer]:
+                  - generic [ref=e746]: Antequera
+                - button "Sabaya" [ref=e747] [cursor=pointer]:
+                  - generic [ref=e748]: Sabaya
+                - button "Coipasa" [ref=e749] [cursor=pointer]:
+                  - generic [ref=e750]: Coipasa
+                - button "Chipaya" [ref=e751] [cursor=pointer]:
+                  - generic [ref=e752]: Chipaya
+                - button "Curahuara de Carangas" [ref=e753] [cursor=pointer]:
+                  - generic [ref=e754]: Curahuara de Carangas
+                - button "Turco" [ref=e755] [cursor=pointer]:
+                  - generic [ref=e756]: Turco
+                - button "Totora" [ref=e757] [cursor=pointer]:
+                  - generic [ref=e758]: Totora
+                - button "Toledo" [ref=e759] [cursor=pointer]:
+                  - generic [ref=e760]: Toledo
+                - button "Santiago de Huari" [ref=e761] [cursor=pointer]:
+                  - generic [ref=e762]: Santiago de Huari
+                - button "Santiago de Andamarca" [ref=e763] [cursor=pointer]:
+                  - generic [ref=e764]: Santiago de Andamarca
+                - button "Belén de Andamarca" [ref=e765] [cursor=pointer]:
+                  - generic [ref=e766]: Belén de Andamarca
+                - button "Eucaliptus" [ref=e767] [cursor=pointer]:
+                  - generic [ref=e768]: Eucaliptus
+            - generic:
+              - generic [ref=e353]: © OpenStreetMap contributors
+              - generic [ref=e354]:
+                - button "Zoom in" [ref=e355] [cursor=pointer]: +
+                - button "Zoom out" [ref=e356] [cursor=pointer]: −
+          - generic [ref=e357]: Mapa interactivo • municipios clickeables
+          - generic [ref=e358]:
+            - generic [ref=e359]: Ejecución normal
+            - generic [ref=e361]: Observado
+            - generic [ref=e363]: Alerta / retraso
+            - generic [ref=e365]: Concluido
+      - complementary [ref=e367]:
+        - generic [ref=e769]:
+          - text: Municipio seleccionado
+          - heading "Huanuni" [level=2] [ref=e770]
+          - paragraph [ref=e771]: Pantaleón Dalence
+          - generic [ref=e772]: Concluido
+        - generic [ref=e773]:
+          - paragraph [ref=e774]: Huanuni concentra seguimiento territorial en la provincia Pantaleón Dalence, con registro de ubicación, avance técnico, avance financiero, unidad responsable y evidencia visual para toma de decisiones.
+          - generic [ref=e775]:
+            - generic [ref=e776]:
+              - strong [ref=e777]: "6"
+              - text: Proyectos activos
+            - generic [ref=e778]:
+              - strong [ref=e779]: 46 km
+              - text: Distancia referencial
+            - generic [ref=e780]:
+              - strong [ref=e781]: CCIM
+              - text: Unidad responsable
+            - generic [ref=e782]:
+              - strong [ref=e783]: "-18.289"
+              - text: Latitud
+          - generic [ref=e784]:
+            - generic [ref=e786]:
+              - generic [ref=e787]: Avance físico
+              - strong [ref=e788]: 100%
+            - generic [ref=e792]:
+              - generic [ref=e793]: Avance financiero
+              - strong [ref=e794]: 97%
+          - generic [ref=e797]:
+            - button "Acercar mapa" [ref=e798] [cursor=pointer]
+            - button "Abrir punto" [ref=e799] [cursor=pointer]
+    - generic [ref=e399]:
+      - article [ref=e400]:
+        - generic [ref=e402]:
+          - paragraph [ref=e403]: Provincia vinculada
+          - heading "Municipios de Pantaleón Dalence" [level=2] [ref=e800]
+        - generic [ref=e405]:
+          - button "Huanuni" [ref=e801] [cursor=pointer]
+          - button "Machacamarca" [ref=e802] [cursor=pointer]
+      - article [ref=e410]:
+        - generic [ref=e412]:
+          - paragraph [ref=e413]: Proyectos territoriales
+          - heading "Proyectos en Huanuni" [level=2] [ref=e803]
+        - generic [ref=e415]:
+          - generic [ref=e804]:
+            - generic [ref=e805]: "1"
+            - generic [ref=e806]:
+              - strong [ref=e807]: Seguimiento territorial Huanuni
+              - generic [ref=e808]: 100% de avance físico registrado por CCIM.
+          - generic [ref=e809]:
+            - generic [ref=e810]: "2"
+            - generic [ref=e811]:
+              - strong [ref=e812]: Control de proyectos activos
+              - generic [ref=e813]: 6 proyectos vinculados al municipio.
+          - generic [ref=e814]:
+            - generic [ref=e815]: "3"
+            - generic [ref=e816]:
+              - strong [ref=e817]: Reporte técnico municipal
+              - generic [ref=e818]: "Estado actual: Concluido."
+      - article [ref=e431]:
+        - generic [ref=e432]:
+          - generic [ref=e433]:
+            - paragraph [ref=e434]: Evidencia visual
+            - heading "Galería de Huanuni" [level=2] [ref=e819]
+          - generic [ref=e436]:
+            - button "‹" [ref=e437] [cursor=pointer]
+            - button "›" [ref=e438] [cursor=pointer]
+        - generic [ref=e820]:
+          - strong [ref=e821]: Vista territorial
+          - generic [ref=e822]: Huanuni • Pantaleón Dalence
+        - generic [ref=e443]:
+          - button "Ver imagen 1" [ref=e823] [cursor=pointer]
+          - button "Ver imagen 2" [ref=e824] [cursor=pointer]
+          - button "Ver imagen 3" [ref=e825] [cursor=pointer]
+    - generic [ref=e447]:
+      - strong [ref=e448]: "Mapa preparado para siguiente fase:"
+      - generic [ref=e449]: Cuando tengan el archivo municipal oficial en GeoJSON, se reemplazan estos puntos por polígonos clickeables reales sin cambiar la interfaz.

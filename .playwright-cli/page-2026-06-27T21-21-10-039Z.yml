@@ -1,0 +1,22 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "CAO Gestion" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e5]:
+        - link "Inicio" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Proyectos" [ref=e7] [cursor=pointer]:
+          - /url: /proyectos
+    - generic [ref=e8]: Gobierno Autónomo Departamental de Oruro > Secretaría Departamental de Obras Públicas > Dirección de Infraestructura
+  - main [ref=e9]:
+    - generic [ref=e11]:
+      - heading "Iniciar Sesion" [level=1] [ref=e12]
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]: Email
+          - textbox [ref=e16]
+        - generic [ref=e17]:
+          - generic [ref=e18]: Contrasena
+          - textbox [ref=e19]
+        - button "Ingresar" [ref=e20]

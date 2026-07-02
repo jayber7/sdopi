@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum EstadoEvidencia {
+  PENDIENTE
+  VERIFICADO
+  SOSPECHOSO
+  RECHAZADO
+}
+
+enum CategoriaEvidencia {
+  VISTA_GENERAL
+  DETALLE_CONSTRUCCION
+  MATERIAL
+  EQUIPO
+  PERSONAL
+  ANTES
+  DESPUES
+}
+
+enum Jefatura {
+  DI
+  JE
+  JT
+  JUPRE
+  JUS
+}
+
+model Proyecto {
+  id              Int      @id @default(autoincrement())
+  nombre          String
+  contratoNro     String
+  montoContrato   Float
+  anticipoPct     Float    @default(13.7747448)
+  ordenProceder   DateTime
+  fechaConclusion DateTime
+  suspendidoDias  Int      @default(0)
+  direccion       String
+  latitud         Float?
+  longitud        Float?
+  provincia       String?
+  municipio       String?
+  contratista     String
+  supervisor      String
+  fiscal          String
+  jefatura        Jefatura @default(DI)
+  activo          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  rubros          Rubro[]
+  planillas       PlanillaCAO[]
+}
+
+model RubroCatalogo {
+  id       Int           @id @default(autoincrement())
+  jefatura Jefatura
+  nombre   String
+  items    ItemCatalogo[]
+}
+
+model ItemCatalogo {
+  id              Int          @id @default(autoincrement())
+  numero          Int
+  descripcion     String
+  unidad          String
+  rubroCatalogoId Int
+  rubroCatalogo   RubroCatalogo @relation(fields: [rubroCatalogoId], references: [id], onDelete: Cascade)
+}
+
+model Rubro {
+  id         Int    @id @default(autoincrement())
+  codigo     String
+  nombre     String
+  proyectoId Int
+  proyecto   Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  items      Item[]
+}
+
+model Item {
+  id               Int     @id @default(autoincrement())
+  numero           Int
+  descripcion      String
+  unidad           String
+  precioUnitario   Float
+  cantidadContrato Float
+  montoOriginal    Float
+  rubroId          Int
+  rubro            Rubro     @relation(fields: [rubroId], references: [id], onDelete: Cascade)
+  avances          AvanceItem[]
+}
+
+enum TipoPlanilla {
+  BASE
+  CAO
+}
+
+model PlanillaCAO {
+  id             Int          @id @default(autoincrement())
+  tipo           TipoPlanilla @default(CAO)
+  numero         Int
+  periodo        String
+  fechaInicio    DateTime
+  fechaFin       DateTime
+  estado         String       @default("borrador")
+  proyectoId     Int
+  planillaBaseId Int?
+  proyecto       Proyecto     @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  planillaBase   PlanillaCAO? @relation("PlanillaBase", fields: [planillaBaseId], references: [id], onDelete: SetNull)
+  derivados      PlanillaCAO[] @relation("PlanillaBase")
+  avances        AvanceItem[]
+  evidencias     EvidenciaFotografica[]
+
+  @@unique([planillaBaseId, numero])
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  nombre    String
+  role      String   @default("consulta")
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  evidencias EvidenciaFotografica[]
+}
+
+model EvidenciaFotografica {
+  id                        Int                @id @default(autoincrement())
+  url                       String
+  publicId                  String
+  // EXIF metadata
+  exifLatitud               Float?
+  exifLongitud              Float?
+  exifAltitud               Float?
+  exifFechaCaptura          DateTime?
+  exifDispositivo           String?
+  exifModeloCamara          String?
+  exifTieneGPS              Boolean            @default(false)
+  // Geo-verification
+  verificacionEstado        EstadoEvidencia    @default(PENDIENTE)
+  verificacionDistancia     Float?
+  verificacionRadio         Int                @default(500)
+  verificacionFuente        String?            // "exif" | "browser"
+  verificacionObservaciones String?
+  // Metadata
+  categoria                 CategoriaEvidencia @default(VISTA_GENERAL)
+  descripcion               String?
+  // FK obligatoria a AvanceItem
+  avanceItemId              Int
+  avanceItem                AvanceItem         @relation(fields: [avanceItemId], references: [id], onDelete: Cascade)
+  // FK denormalizada a planilla (para listar rápido)
+  planillaId                Int
+  planilla                  PlanillaCAO        @relation(fields: [planillaId], references: [id], onDelete: Cascade)
+  // FK a usuario que registró
+  userId                    Int
+  user                      User               @relation(fields: [userId], references: [id])
+  createdAt                 DateTime           @default(now())
+}
+
+model AvanceItem {
+  id                Int     @id @default(autoincrement())
+  cantidad          Float
+  monto             Float
+  avancePct         Float
+  descripcion       String?  // para items nuevos o override
+  unidad            String?  // override
+  precioUnitario    Float?   // override
+  cantidadContrato  Float?   // override
+  rubroCodigo       String?  // para rubro de items nuevos
+  rubroNombre       String?  // para rubro de items nuevos
+  aprobado          Boolean? // null=pendiente, true=aprobado, false=rechazado
+  itemId            Int?
+  item              Item?        @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  planillaId        Int
+  planilla          PlanillaCAO  @relation(fields: [planillaId], references: [id], onDelete: Cascade)
+  evidencias        EvidenciaFotografica[]
+}

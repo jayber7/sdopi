@@ -1,0 +1,28 @@
+schema: spec-driven
+
+context: |
+  Proyecto: Sistema de Gestión de Certificados de Avance de Obra (CAO)
+  Dominio: Control físico-financiero de obras viales
+  Stack: NestJS + Next.js + Tailwind CSS + SQLite + TypeScript
+
+  Entidades del dominio (basado en análisis de Excel real):
+  - Proyecto: datos del contrato (nro, fechas, montos, entidades)
+  - Rubro: categoria de obra (M01-Movimiento de Tierras, M02-Pavimento, etc.)
+  - Item: linea de obra (codigo, descripcion, unidad, precio unitario)
+  - PlanillaCAO: certificado de avance (N°1 al N°10, periodo, fechas)
+  - AvanceItem: cantidad ejecutada y monto por item en cada CAO
+
+  Convenciones:
+  - TypeScript estricto en backend y frontend
+  - API RESTful con NestJS
+  - Prisma ORM para SQLite
+  - Tailwind CSS para estilos
+  - ESLint + Prettier
+
+rules:
+  specs:
+    - Usar formato ADDED/MODIFIED/REMOVED para delta specs
+    - Incluir Given/When/Then para cada Scenario
+  tasks:
+    - Cada tarea debe ser completable en una sesion
+    - Numeracion jerarquica (1.1, 1.2, etc.)

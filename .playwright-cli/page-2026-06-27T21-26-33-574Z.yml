@@ -1,0 +1,42 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "CAO Gestion" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e5]:
+        - link "Inicio" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Proyectos" [ref=e7] [cursor=pointer]:
+          - /url: /proyectos
+        - link "Usuarios" [ref=e32] [cursor=pointer]:
+          - /url: /usuarios
+        - generic [ref=e33]: Administrador
+        - button "Salir" [ref=e34]
+    - generic [ref=e8]: Gobierno Autónomo Departamental de Oruro > Secretaría Departamental de Obras Públicas > Dirección de Infraestructura
+  - main [ref=e9]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - heading "CAO Gestión" [level=1] [ref=e37]
+        - paragraph [ref=e38]: Sistema de gestión de Certificados de Avance de Obra. Control físico-financiero de proyectos viales.
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - heading "Proyectos" [level=2] [ref=e41]
+          - paragraph [ref=e42]: Gestión de contratos y datos del proyecto
+        - generic [ref=e43]:
+          - heading "Catálogo de Items" [level=2] [ref=e44]
+          - paragraph [ref=e45]: Rubros, items y precios unitarios
+        - generic [ref=e46]:
+          - heading "Planillas CAO" [level=2] [ref=e47]
+          - paragraph [ref=e48]: Certificados de avance de obra
+        - generic [ref=e49]:
+          - heading "Dashboard" [level=2] [ref=e50]
+          - paragraph [ref=e51]: Indicadores de avance físico y financiero
+        - generic [ref=e52]:
+          - heading "Reportes" [level=2] [ref=e53]
+          - paragraph [ref=e54]: Comparativas y análisis de avance
+        - generic [ref=e55]:
+          - heading "Importar Excel" [level=2] [ref=e56]
+          - paragraph [ref=e57]: Carga de datos desde archivos XLSM
+  - button "Open Next.js Dev Tools" [ref=e27] [cursor=pointer]:
+    - img [ref=e28]
+  - alert [ref=e31]

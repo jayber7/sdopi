@@ -1,0 +1,4 @@
+name: setup-proyecto
+date: 2025-06-25
+status: archived
+description: Scaffolding base del proyecto NestJS + Next.js + Prisma + SQLite

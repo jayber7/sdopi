@@ -1,0 +1,434 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: GO
+      - generic [ref=e6]:
+        - strong [ref=e7]: Gobernación de Oruro
+        - generic [ref=e8]: Mapa Territorial Inteligente
+    - generic [ref=e9]:
+      - generic [ref=e10]: ⌕
+      - searchbox "⌕ 📍 Challapata Abaroa 📍 Huachacalla Litoral 📍 Cruz de Machacamarca Litoral 🌐 U.E. Cha'Lluma Lupi, Camino Puerto Escoma-Challuma school" [active] [ref=e450]: Cha
+      - generic [ref=e451]:
+        - button "📍 Challapata Abaroa" [ref=e452] [cursor=pointer]:
+          - generic [ref=e453]: 📍
+          - generic [ref=e454]:
+            - strong [ref=e455]: Challapata
+            - generic [ref=e456]: Abaroa
+        - button "📍 Huachacalla Litoral" [ref=e457] [cursor=pointer]:
+          - generic [ref=e458]: 📍
+          - generic [ref=e459]:
+            - strong [ref=e460]: Huachacalla
+            - generic [ref=e461]: Litoral
+        - button "📍 Cruz de Machacamarca Litoral" [ref=e462] [cursor=pointer]:
+          - generic [ref=e463]: 📍
+          - generic [ref=e464]:
+            - strong [ref=e465]: Cruz de Machacamarca
+            - generic [ref=e466]: Litoral
+        - button "🌐 U.E. Cha'Lluma Lupi, Camino Puerto Escoma-Challuma school" [ref=e467] [cursor=pointer]:
+          - generic [ref=e468]: 🌐
+          - generic [ref=e469]:
+            - strong [ref=e470]: U.E. Cha'Lluma Lupi, Camino Puerto Escoma-Challuma
+            - generic [ref=e471]: school
+    - generic [ref=e12]:
+      - button "◐" [ref=e13] [cursor=pointer]
+      - button "Mapa Territorial" [ref=e14] [cursor=pointer]:
+        - generic [ref=e15]: Mapa
+        - generic [ref=e16]: Territorial
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - paragraph [ref=e20]: Carátula territorial interactiva
+        - heading "Mapa inteligente de municipios de Oruro" [level=1] [ref=e21]
+        - paragraph [ref=e22]: "La portada queda centrada en el territorio: puntos municipales, selección por provincia, ficha técnica, línea de conexión a Oruro, proyectos destacados, estados y evidencia visual."
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - strong [ref=e25]: "16"
+          - generic [ref=e26]: Provincias
+        - generic [ref=e27]:
+          - strong [ref=e28]: "35"
+          - generic [ref=e29]: Municipios
+        - generic [ref=e30]:
+          - strong [ref=e31]: "162"
+          - generic [ref=e32]: Proyectos
+        - generic [ref=e33]:
+          - strong [ref=e34]: 60%
+          - generic [ref=e35]: Avance prom.
+        - generic [ref=e36]:
+          - strong [ref=e37]: "11"
+          - generic [ref=e38]: Revisión
+    - generic [ref=e39]:
+      - complementary [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - paragraph [ref=e43]: Municipios
+            - heading "Listado territorial" [level=2] [ref=e44]
+          - combobox "Filtrar por estado" [ref=e45]:
+            - option "Todos" [selected]
+            - option "Normal"
+            - option "Observado"
+            - option "Alerta"
+            - option "Concluido"
+        - generic [ref=e46]:
+          - button "Oruro Cercado • Dirección 78%" [ref=e47] [cursor=pointer]:
+            - generic [ref=e49]:
+              - strong [ref=e50]: Oruro
+              - generic [ref=e51]: Cercado • Dirección
+            - generic [ref=e52]: 78%
+          - button "Caracollo Cercado • UDETRA 64%" [ref=e53] [cursor=pointer]:
+            - generic [ref=e55]:
+              - strong [ref=e56]: Caracollo
+              - generic [ref=e57]: Cercado • UDETRA
+            - generic [ref=e58]: 64%
+          - button "El Choro Cercado • GF 46%" [ref=e59] [cursor=pointer]:
+            - generic [ref=e61]:
+              - strong [ref=e62]: El Choro
+              - generic [ref=e63]: Cercado • GF
+            - generic [ref=e64]: 46%
+          - button "Soracachi Cercado • UPRAC 59%" [ref=e65] [cursor=pointer]:
+            - generic [ref=e67]:
+              - strong [ref=e68]: Soracachi
+              - generic [ref=e69]: Cercado • UPRAC
+            - generic [ref=e70]: 59%
+          - button "Challapata Abaroa • Dirección 69%" [ref=e71] [cursor=pointer]:
+            - generic [ref=e73]:
+              - strong [ref=e74]: Challapata
+              - generic [ref=e75]: Abaroa • Dirección
+            - generic [ref=e76]: 69%
+          - button "Santuario de Quillacas Abaroa • GF 48%" [ref=e77] [cursor=pointer]:
+            - generic [ref=e79]:
+              - strong [ref=e80]: Santuario de Quillacas
+              - generic [ref=e81]: Abaroa • GF
+            - generic [ref=e82]: 48%
+          - button "Corque Carangas • UPRAC 62%" [ref=e83] [cursor=pointer]:
+            - generic [ref=e85]:
+              - strong [ref=e86]: Corque
+              - generic [ref=e87]: Carangas • UPRAC
+            - generic [ref=e88]: 62%
+          - button "Choquecota Carangas • UPRAC 57%" [ref=e89] [cursor=pointer]:
+            - generic [ref=e91]:
+              - strong [ref=e92]: Choquecota
+              - generic [ref=e93]: Carangas • UPRAC
+            - generic [ref=e94]: 57%
+          - button "Salinas de Garci Mendoza Ladislao Cabrera • GF 34%" [ref=e95] [cursor=pointer]:
+            - generic [ref=e97]:
+              - strong [ref=e98]: Salinas de Garci Mendoza
+              - generic [ref=e99]: Ladislao Cabrera • GF
+            - generic [ref=e100]: 34%
+          - button "Pampa Aullagas Ladislao Cabrera • UPRAC 31%" [ref=e101] [cursor=pointer]:
+            - generic [ref=e103]:
+              - strong [ref=e104]: Pampa Aullagas
+              - generic [ref=e105]: Ladislao Cabrera • UPRAC
+            - generic [ref=e106]: 31%
+          - button "Huachacalla Litoral • UNASBI 53%" [ref=e107] [cursor=pointer]:
+            - generic [ref=e109]:
+              - strong [ref=e110]: Huachacalla
+              - generic [ref=e111]: Litoral • UNASBI
+            - generic [ref=e112]: 53%
+          - button "Escara Litoral • Dirección 61%" [ref=e113] [cursor=pointer]:
+            - generic [ref=e115]:
+              - strong [ref=e116]: Escara
+              - generic [ref=e117]: Litoral • Dirección
+            - generic [ref=e118]: 61%
+          - button "Cruz de Machacamarca Litoral • UDETRA 56%" [ref=e119] [cursor=pointer]:
+            - generic [ref=e121]:
+              - strong [ref=e122]: Cruz de Machacamarca
+              - generic [ref=e123]: Litoral • UDETRA
+            - generic [ref=e124]: 56%
+          - button "Yunguyo de Litoral Litoral • GF 44%" [ref=e125] [cursor=pointer]:
+            - generic [ref=e127]:
+              - strong [ref=e128]: Yunguyo de Litoral
+              - generic [ref=e129]: Litoral • GF
+            - generic [ref=e130]: 44%
+          - button "Esmeralda Litoral • Dirección 63%" [ref=e131] [cursor=pointer]:
+            - generic [ref=e133]:
+              - strong [ref=e134]: Esmeralda
+              - generic [ref=e135]: Litoral • Dirección
+            - generic [ref=e136]: 63%
+          - button "La Rivera Mejillones • Dirección 62%" [ref=e137] [cursor=pointer]:
+            - generic [ref=e139]:
+              - strong [ref=e140]: La Rivera
+              - generic [ref=e141]: Mejillones • Dirección
+            - generic [ref=e142]: 62%
+          - button "Todos Santos Mejillones • UDETRA 58%" [ref=e143] [cursor=pointer]:
+            - generic [ref=e145]:
+              - strong [ref=e146]: Todos Santos
+              - generic [ref=e147]: Mejillones • UDETRA
+            - generic [ref=e148]: 58%
+          - button "Carangas Mejillones • GF 43%" [ref=e149] [cursor=pointer]:
+            - generic [ref=e151]:
+              - strong [ref=e152]: Carangas
+              - generic [ref=e153]: Mejillones • GF
+            - generic [ref=e154]: 43%
+          - button "Huayllamarca Nor Carangas • Dirección 59%" [ref=e155] [cursor=pointer]:
+            - generic [ref=e157]:
+              - strong [ref=e158]: Huayllamarca
+              - generic [ref=e159]: Nor Carangas • Dirección
+            - generic [ref=e160]: 59%
+          - button "Huanuni Pantaleón Dalence • CCIM 100%" [ref=e161] [cursor=pointer]:
+            - generic [ref=e163]:
+              - strong [ref=e164]: Huanuni
+              - generic [ref=e165]: Pantaleón Dalence • CCIM
+            - generic [ref=e166]: 100%
+          - button "Machacamarca Pantaleón Dalence • Dirección 67%" [ref=e167] [cursor=pointer]:
+            - generic [ref=e169]:
+              - strong [ref=e170]: Machacamarca
+              - generic [ref=e171]: Pantaleón Dalence • Dirección
+            - generic [ref=e172]: 67%
+          - button "Poopó Poopó • GF 44%" [ref=e173] [cursor=pointer]:
+            - generic [ref=e175]:
+              - strong [ref=e176]: Poopó
+              - generic [ref=e177]: Poopó • GF
+            - generic [ref=e178]: 44%
+          - button "Pazña Poopó • UDETRA 57%" [ref=e179] [cursor=pointer]:
+            - generic [ref=e181]:
+              - strong [ref=e182]: Pazña
+              - generic [ref=e183]: Poopó • UDETRA
+            - generic [ref=e184]: 57%
+          - button "Antequera Poopó • UPRAC 49%" [ref=e185] [cursor=pointer]:
+            - generic [ref=e187]:
+              - strong [ref=e188]: Antequera
+              - generic [ref=e189]: Poopó • UPRAC
+            - generic [ref=e190]: 49%
+          - button "Sabaya Sabaya • UNASBI 100%" [ref=e191] [cursor=pointer]:
+            - generic [ref=e193]:
+              - strong [ref=e194]: Sabaya
+              - generic [ref=e195]: Sabaya • UNASBI
+            - generic [ref=e196]: 100%
+          - button "Coipasa Sabaya • Dirección 64%" [ref=e197] [cursor=pointer]:
+            - generic [ref=e199]:
+              - strong [ref=e200]: Coipasa
+              - generic [ref=e201]: Sabaya • Dirección
+            - generic [ref=e202]: 64%
+          - button "Chipaya Sabaya • UNASBI 100%" [ref=e203] [cursor=pointer]:
+            - generic [ref=e205]:
+              - strong [ref=e206]: Chipaya
+              - generic [ref=e207]: Sabaya • UNASBI
+            - generic [ref=e208]: 100%
+          - button "Curahuara de Carangas Sajama • UDETRA 64%" [ref=e209] [cursor=pointer]:
+            - generic [ref=e211]:
+              - strong [ref=e212]: Curahuara de Carangas
+              - generic [ref=e213]: Sajama • UDETRA
+            - generic [ref=e214]: 64%
+          - button "Turco Sajama • UDETRA 55%" [ref=e215] [cursor=pointer]:
+            - generic [ref=e217]:
+              - strong [ref=e218]: Turco
+              - generic [ref=e219]: Sajama • UDETRA
+            - generic [ref=e220]: 55%
+          - button "Totora San Pedro de Totora • UPRAC 57%" [ref=e221] [cursor=pointer]:
+            - generic [ref=e223]:
+              - strong [ref=e224]: Totora
+              - generic [ref=e225]: San Pedro de Totora • UPRAC
+            - generic [ref=e226]: 57%
+          - button "Toledo Saucarí • UDETRA 55%" [ref=e227] [cursor=pointer]:
+            - generic [ref=e229]:
+              - strong [ref=e230]: Toledo
+              - generic [ref=e231]: Saucarí • UDETRA
+            - generic [ref=e232]: 55%
+          - button "Santiago de Huari Sebastián Pagador • UPRAC 28%" [ref=e233] [cursor=pointer]:
+            - generic [ref=e235]:
+              - strong [ref=e236]: Santiago de Huari
+              - generic [ref=e237]: Sebastián Pagador • UPRAC
+            - generic [ref=e238]: 28%
+          - button "Santiago de Andamarca Sud Carangas • UDETRA 100%" [ref=e239] [cursor=pointer]:
+            - generic [ref=e241]:
+              - strong [ref=e242]: Santiago de Andamarca
+              - generic [ref=e243]: Sud Carangas • UDETRA
+            - generic [ref=e244]: 100%
+          - button "Belén de Andamarca Sud Carangas • Dirección 69%" [ref=e245] [cursor=pointer]:
+            - generic [ref=e247]:
+              - strong [ref=e248]: Belén de Andamarca
+              - generic [ref=e249]: Sud Carangas • Dirección
+            - generic [ref=e250]: 69%
+          - button "Eucaliptus Tomás Barrón • GF 45%" [ref=e251] [cursor=pointer]:
+            - generic [ref=e253]:
+              - strong [ref=e254]: Eucaliptus
+              - generic [ref=e255]: Tomás Barrón • GF
+            - generic [ref=e256]: 45%
+      - article [ref=e257]:
+        - generic [ref=e258]:
+          - generic [ref=e259]:
+            - paragraph [ref=e260]: Centro de control territorial
+            - heading "Oruro en mapa dinámico" [level=2] [ref=e261]
+            - generic [ref=e262]: Oruro seleccionado • Cercado • 0 km aprox. desde Oruro
+          - generic [ref=e263]:
+            - button "Centrar Oruro" [ref=e264] [cursor=pointer]
+            - button "Ocultar línea" [ref=e265] [cursor=pointer]
+            - button "Pantalla completa" [ref=e266] [cursor=pointer]
+            - generic [ref=e267]:
+              - generic [ref=e268]: "Capa:"
+              - button "OSM" [ref=e269] [cursor=pointer]
+              - button "Oscuro" [ref=e270] [cursor=pointer]
+              - button "Satélite" [ref=e271] [cursor=pointer]
+              - button "Topo" [ref=e272] [cursor=pointer]
+            - generic [ref=e273]:
+              - generic [ref=e274]: "Capas:"
+              - generic [ref=e275] [cursor=pointer]:
+                - checkbox "Polígonos" [checked] [ref=e276]
+                - text: Polígonos
+        - generic [ref=e277]:
+          - generic "Mapa interactivo de municipios de Oruro" [ref=e278]:
+            - generic:
+              - generic:
+                - button "GO" [ref=e280] [cursor=pointer]:
+                  - generic "Ciudad de Oruro" [ref=e281]:
+                    - generic [ref=e282]: GO
+                - button "Oruro" [ref=e283] [cursor=pointer]:
+                  - generic [ref=e284]: Oruro
+                - button "Caracollo" [ref=e285] [cursor=pointer]:
+                  - generic [ref=e286]: Caracollo
+                - button "El Choro" [ref=e287] [cursor=pointer]:
+                  - generic [ref=e288]: El Choro
+                - button "Soracachi" [ref=e289] [cursor=pointer]:
+                  - generic [ref=e290]: Soracachi
+                - button "Challapata" [ref=e291] [cursor=pointer]:
+                  - generic [ref=e292]: Challapata
+                - button "Santuario de Quillacas" [ref=e293] [cursor=pointer]:
+                  - generic [ref=e294]: Santuario de Quillacas
+                - button "Corque" [ref=e295] [cursor=pointer]:
+                  - generic [ref=e296]: Corque
+                - button "Choquecota" [ref=e297] [cursor=pointer]:
+                  - generic [ref=e298]: Choquecota
+                - button "Salinas de Garci Mendoza" [ref=e299] [cursor=pointer]:
+                  - generic [ref=e300]: Salinas de Garci Mendoza
+                - button "Pampa Aullagas" [ref=e301] [cursor=pointer]:
+                  - generic [ref=e302]: Pampa Aullagas
+                - button "Huachacalla" [ref=e303] [cursor=pointer]:
+                  - generic [ref=e304]: Huachacalla
+                - button "Escara" [ref=e305] [cursor=pointer]:
+                  - generic [ref=e306]: Escara
+                - button "Cruz de Machacamarca" [ref=e307] [cursor=pointer]:
+                  - generic [ref=e308]: Cruz de Machacamarca
+                - button "Yunguyo de Litoral" [ref=e309] [cursor=pointer]:
+                  - generic [ref=e310]: Yunguyo de Litoral
+                - button "Esmeralda" [ref=e311] [cursor=pointer]:
+                  - generic [ref=e312]: Esmeralda
+                - button "La Rivera" [ref=e313] [cursor=pointer]:
+                  - generic [ref=e314]: La Rivera
+                - button "Todos Santos" [ref=e315] [cursor=pointer]:
+                  - generic [ref=e316]: Todos Santos
+                - button "Carangas" [ref=e317] [cursor=pointer]:
+                  - generic [ref=e318]: Carangas
+                - button "Huayllamarca" [ref=e319] [cursor=pointer]:
+                  - generic [ref=e320]: Huayllamarca
+                - button "Huanuni" [ref=e321] [cursor=pointer]:
+                  - generic [ref=e322]: Huanuni
+                - button "Machacamarca" [ref=e323] [cursor=pointer]:
+                  - generic [ref=e324]: Machacamarca
+                - button "Poopó" [ref=e325] [cursor=pointer]:
+                  - generic [ref=e326]: Poopó
+                - button "Pazña" [ref=e327] [cursor=pointer]:
+                  - generic [ref=e328]: Pazña
+                - button "Antequera" [ref=e329] [cursor=pointer]:
+                  - generic [ref=e330]: Antequera
+                - button "Sabaya" [ref=e331] [cursor=pointer]:
+                  - generic [ref=e332]: Sabaya
+                - button "Coipasa" [ref=e333] [cursor=pointer]:
+                  - generic [ref=e334]: Coipasa
+                - button "Chipaya" [ref=e335] [cursor=pointer]:
+                  - generic [ref=e336]: Chipaya
+                - button "Curahuara de Carangas" [ref=e337] [cursor=pointer]:
+                  - generic [ref=e338]: Curahuara de Carangas
+                - button "Turco" [ref=e339] [cursor=pointer]:
+                  - generic [ref=e340]: Turco
+                - button "Totora" [ref=e341] [cursor=pointer]:
+                  - generic [ref=e342]: Totora
+                - button "Toledo" [ref=e343] [cursor=pointer]:
+                  - generic [ref=e344]: Toledo
+                - button "Santiago de Huari" [ref=e345] [cursor=pointer]:
+                  - generic [ref=e346]: Santiago de Huari
+                - button "Santiago de Andamarca" [ref=e347] [cursor=pointer]:
+                  - generic [ref=e348]: Santiago de Andamarca
+                - button "Belén de Andamarca" [ref=e349] [cursor=pointer]:
+                  - generic [ref=e350]: Belén de Andamarca
+                - button "Eucaliptus" [ref=e351] [cursor=pointer]:
+                  - generic [ref=e352]: Eucaliptus
+            - generic:
+              - generic [ref=e353]: © OpenStreetMap contributors
+              - generic [ref=e354]:
+                - button "Zoom in" [ref=e355] [cursor=pointer]: +
+                - button "Zoom out" [ref=e356] [cursor=pointer]: −
+          - generic [ref=e357]: Mapa interactivo • municipios clickeables
+          - generic [ref=e358]:
+            - generic [ref=e359]: Ejecución normal
+            - generic [ref=e361]: Observado
+            - generic [ref=e363]: Alerta / retraso
+            - generic [ref=e365]: Concluido
+      - complementary [ref=e367]:
+        - generic [ref=e368]:
+          - text: Municipio seleccionado
+          - heading "Oruro" [level=2] [ref=e369]
+          - paragraph [ref=e370]: Cercado
+          - generic [ref=e371]: Ejecución normal
+        - generic [ref=e372]:
+          - paragraph [ref=e373]: Oruro concentra seguimiento territorial en la provincia Cercado, con registro de ubicación, avance técnico, avance financiero, unidad responsable y evidencia visual para toma de decisiones.
+          - generic [ref=e374]:
+            - generic [ref=e375]:
+              - strong [ref=e376]: "21"
+              - text: Proyectos activos
+            - generic [ref=e377]:
+              - strong [ref=e378]: 0 km
+              - text: Distancia referencial
+            - generic [ref=e379]:
+              - strong [ref=e380]: Dirección
+              - text: Unidad responsable
+            - generic [ref=e381]:
+              - strong [ref=e382]: "-17.965"
+              - text: Latitud
+          - generic [ref=e383]:
+            - generic [ref=e385]:
+              - generic [ref=e386]: Avance físico
+              - strong [ref=e387]: 78%
+            - generic [ref=e391]:
+              - generic [ref=e392]: Avance financiero
+              - strong [ref=e393]: 72%
+          - generic [ref=e396]:
+            - button "Acercar mapa" [ref=e397] [cursor=pointer]
+            - button "Abrir punto" [ref=e398] [cursor=pointer]
+    - generic [ref=e399]:
+      - article [ref=e400]:
+        - generic [ref=e402]:
+          - paragraph [ref=e403]: Provincia vinculada
+          - heading "Municipios de Cercado" [level=2] [ref=e404]
+        - generic [ref=e405]:
+          - button "Oruro" [ref=e406] [cursor=pointer]
+          - button "Caracollo" [ref=e407] [cursor=pointer]
+          - button "El Choro" [ref=e408] [cursor=pointer]
+          - button "Soracachi" [ref=e409] [cursor=pointer]
+      - article [ref=e410]:
+        - generic [ref=e412]:
+          - paragraph [ref=e413]: Proyectos territoriales
+          - heading "Proyectos en Oruro" [level=2] [ref=e414]
+        - generic [ref=e415]:
+          - generic [ref=e416]:
+            - generic [ref=e417]: "1"
+            - generic [ref=e418]:
+              - strong [ref=e419]: Seguimiento territorial Oruro
+              - generic [ref=e420]: 78% de avance físico registrado por Dirección.
+          - generic [ref=e421]:
+            - generic [ref=e422]: "2"
+            - generic [ref=e423]:
+              - strong [ref=e424]: Control de proyectos activos
+              - generic [ref=e425]: 21 proyectos vinculados al municipio.
+          - generic [ref=e426]:
+            - generic [ref=e427]: "3"
+            - generic [ref=e428]:
+              - strong [ref=e429]: Reporte técnico municipal
+              - generic [ref=e430]: "Estado actual: Ejecución normal."
+      - article [ref=e431]:
+        - generic [ref=e432]:
+          - generic [ref=e433]:
+            - paragraph [ref=e434]: Evidencia visual
+            - heading "Galería de Oruro" [level=2] [ref=e435]
+          - generic [ref=e436]:
+            - button "‹" [ref=e437] [cursor=pointer]
+            - button "›" [ref=e438] [cursor=pointer]
+        - generic [ref=e440]:
+          - strong [ref=e441]: Vista territorial
+          - generic [ref=e442]: Oruro • Cercado
+        - generic [ref=e443]:
+          - button "Ver imagen 1" [ref=e444] [cursor=pointer]
+          - button "Ver imagen 2" [ref=e445] [cursor=pointer]
+          - button "Ver imagen 3" [ref=e446] [cursor=pointer]
+    - generic [ref=e447]:
+      - strong [ref=e448]: "Mapa preparado para siguiente fase:"
+      - generic [ref=e449]: Cuando tengan el archivo municipal oficial en GeoJSON, se reemplazan estos puntos por polígonos clickeables reales sin cambiar la interfaz.

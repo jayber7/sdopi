@@ -1,0 +1,71 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: GO
+      - generic [ref=e6]:
+        - strong [ref=e7]: Gobernación de Oruro
+        - generic [ref=e8]: Mapa Territorial Inteligente
+    - generic [ref=e9]:
+      - generic [ref=e10]: ⌕
+      - searchbox "⌕" [ref=e11]
+    - generic [ref=e12]:
+      - button "◐" [ref=e13] [cursor=pointer]
+      - button "Mapa Territorial" [ref=e14] [cursor=pointer]:
+        - generic [ref=e15]: Mapa
+        - generic [ref=e16]: Territorial
+  - main [ref=e17]:
+    - generic [ref=e19]:
+      - paragraph [ref=e20]: Carátula territorial interactiva
+      - heading "Mapa inteligente de municipios de Oruro" [level=1] [ref=e21]
+      - paragraph [ref=e22]: "La portada queda centrada en el territorio: puntos municipales, selección por provincia, ficha técnica, línea de conexión a Oruro, proyectos destacados, estados y evidencia visual."
+    - generic [ref=e23]:
+      - complementary [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - paragraph [ref=e27]: Municipios
+            - heading "Listado territorial" [level=2] [ref=e28]
+          - combobox "Filtrar por estado" [ref=e29]:
+            - option "Todos" [selected]
+            - option "Normal"
+            - option "Observado"
+            - option "Alerta"
+            - option "Concluido"
+      - article [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - paragraph [ref=e34]: Centro de control territorial
+            - heading "Oruro en mapa dinámico" [level=2] [ref=e35]
+            - generic [ref=e36]: Seleccione un municipio para acercar el mapa.
+          - generic [ref=e37]:
+            - button "Centrar Oruro" [ref=e38] [cursor=pointer]
+            - button "Ocultar línea" [ref=e39] [cursor=pointer]
+            - button "Pantalla completa" [ref=e40] [cursor=pointer]
+        - generic [ref=e41]:
+          - generic "Mapa interactivo de municipios de Oruro" [ref=e42]
+          - generic [ref=e43]: Mapa interactivo • municipios clickeables
+          - generic [ref=e44]:
+            - generic [ref=e45]: Ejecución normal
+            - generic [ref=e47]: Observado
+            - generic [ref=e49]: Alerta / retraso
+            - generic [ref=e51]: Concluido
+      - complementary [ref=e53]
+    - generic [ref=e54]:
+      - article [ref=e55]:
+        - generic [ref=e57]:
+          - paragraph [ref=e58]: Provincia vinculada
+          - heading "Municipios relacionados" [level=2] [ref=e59]
+      - article [ref=e61]:
+        - generic [ref=e63]:
+          - paragraph [ref=e64]: Proyectos territoriales
+          - heading "Proyectos destacados" [level=2] [ref=e65]
+      - article [ref=e67]:
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - paragraph [ref=e70]: Evidencia visual
+            - heading "Galería" [level=2] [ref=e71]
+          - generic [ref=e72]:
+            - button "‹" [ref=e73] [cursor=pointer]
+            - button "›" [ref=e74] [cursor=pointer]
+    - generic [ref=e77]:
+      - strong [ref=e78]: "Mapa preparado para siguiente fase:"
+      - generic [ref=e79]: Cuando tengan el archivo municipal oficial en GeoJSON, se reemplazan estos puntos por polígonos clickeables reales sin cambiar la interfaz.

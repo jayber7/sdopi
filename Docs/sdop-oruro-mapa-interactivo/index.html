@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa Territorial Oruro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="oruro-app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="seal">GO</div>
+        <div>
+          <strong>Gobernación de Oruro</strong>
+          <span>Mapa Territorial Inteligente</span>
+        </div>
+      </div>
+
+      <label class="searchbox" for="searchInput">
+        <span>⌕</span>
+        <input id="searchInput" type="search" placeholder="Buscar municipio, provincia o proyecto..." autocomplete="off" />
+      </label>
+
+      <div class="top-actions">
+        <button id="themeBtn" class="icon-btn" type="button" title="Cambiar tema">◐</button>
+        <button class="user-pill" type="button"><b>Mapa</b><small>Territorial</small></button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Carátula territorial interactiva</p>
+          <h1>Mapa inteligente de municipios de Oruro</h1>
+          <p>La portada queda centrada en el territorio: puntos municipales, selección por provincia, ficha técnica, línea de conexión a Oruro, proyectos destacados, estados y evidencia visual.</p>
+        </div>
+        <div class="hero-kpis" id="heroKpis"></div>
+      </section>
+
+      <section class="map-layout">
+        <aside class="territory-panel card">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Municipios</p>
+              <h2>Listado territorial</h2>
+            </div>
+            <select id="statusFilter" aria-label="Filtrar por estado">
+              <option value="todos">Todos</option>
+              <option value="normal">Normal</option>
+              <option value="observado">Observado</option>
+              <option value="alerta">Alerta</option>
+              <option value="concluido">Concluido</option>
+            </select>
+          </div>
+          <div class="territory-list" id="territoryList"></div>
+        </aside>
+
+        <article class="map-card card" id="mapCard">
+          <div class="map-header">
+            <div>
+              <p class="eyebrow">Centro de control territorial</p>
+              <h2>Oruro en mapa dinámico</h2>
+              <span id="mapSubtitle">Seleccione un municipio para acercar el mapa.</span>
+            </div>
+            <div class="map-controls">
+              <button class="control-btn wide" id="centerBtn" type="button">Centrar Oruro</button>
+              <button class="control-btn wide" id="toggleRouteBtn" type="button">Ocultar línea</button>
+              <button class="control-btn wide" id="fullscreenBtn" type="button">Pantalla completa</button>
+            </div>
+          </div>
+
+          <div class="real-map-shell">
+            <div id="realMap" class="real-map" aria-label="Mapa interactivo de municipios de Oruro"></div>
+            <div class="map-badge">Mapa interactivo • municipios clickeables</div>
+            <div class="map-legend">
+              <span><i class="normal"></i> Ejecución normal</span>
+              <span><i class="observado"></i> Observado</span>
+              <span><i class="alerta"></i> Alerta / retraso</span>
+              <span><i class="concluido"></i> Concluido</span>
+            </div>
+          </div>
+        </article>
+
+        <aside class="detail-panel card" id="detailPanel"></aside>
+      </section>
+
+      <section class="below-grid">
+        <article class="card municipalities-card">
+          <div class="panel-head compact">
+            <div><p class="eyebrow">Provincia vinculada</p><h2 id="municipalityTitle">Municipios relacionados</h2></div>
+          </div>
+          <div class="municipality-grid" id="municipalityGrid"></div>
+        </article>
+
+        <article class="card project-card">
+          <div class="panel-head compact">
+            <div><p class="eyebrow">Proyectos territoriales</p><h2 id="projectTitle">Proyectos destacados</h2></div>
+          </div>
+          <div class="project-timeline" id="projectTimeline"></div>
+        </article>
+
+        <article class="card gallery-card">
+          <div class="panel-head compact">
+            <div><p class="eyebrow">Evidencia visual</p><h2 id="galleryTitle">Galería</h2></div>
+            <div class="gallery-controls"><button id="prevPhoto" type="button">‹</button><button id="nextPhoto" type="button">›</button></div>
+          </div>
+          <div class="gallery-stage" id="galleryStage"></div>
+          <div class="gallery-dots" id="galleryDots"></div>
+        </article>
+      </section>
+
+      <section class="note card">
+        <strong>Mapa preparado para siguiente fase:</strong>
+        <span>Cuando tengan el archivo municipal oficial en GeoJSON, se reemplazan estos puntos por polígonos clickeables reales sin cambiar la interfaz.</span>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/loader.js"></script>
+</body>
+</html>
