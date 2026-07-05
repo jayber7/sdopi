@@ -20,12 +20,13 @@ The system SHALL allow ADMIN users to create new users with email, password, nam
 - THEN a 409 Conflict error is returned
 
 ### Requirement: User Authentication
-The system SHALL authenticate users via email and password using JWT tokens in httpOnly cookies.
+The system SHALL authenticate users via email and password using JWT tokens in httpOnly cookies with SameSite=None; Secure.
 
 #### Scenario: Successful login
 - GIVEN a user with valid credentials
 - WHEN the user sends POST /auth/login with { email, password }
 - THEN a Set-Cookie header with auth_token is returned
+- AND the cookie has HttpOnly, Secure, SameSite=None, Path=/, Max-Age=86400
 - AND the response includes user data (without password)
 
 #### Scenario: Invalid credentials
@@ -33,6 +34,19 @@ The system SHALL authenticate users via email and password using JWT tokens in h
 - WHEN the user sends POST /auth/login
 - THEN a 401 Unauthorized error is returned
 - AND no cookie is set
+
+### Requirement: Cross-origin Authentication
+The system SHALL support authentication across different origins (frontend and backend on different domains) using an API proxy pattern.
+
+#### Scenario: API calls proxied through frontend origin
+- GIVEN a frontend at sdopi-frontend.vercel.app and backend at sdopi-backend.vercel.app
+- WHEN the frontend makes API calls via Next.js rewrites (`/api/*` → backend URL)
+- THEN the cookie is set on the frontend domain (same origin) so the middleware can validate sessions
+
+#### Scenario: Cookie works on same origin
+- GIVEN a cookie set via the rewrite proxy (on frontend domain)
+- WHEN the frontend middleware checks `request.cookies.get('auth_token')`
+- THEN the cookie is present and the session is valid
 
 ### Requirement: Session Verification
 The system SHALL expose GET /auth/me to verify the current session.

@@ -64,22 +64,22 @@ El sistema SHALL calcular el líquido pagado de cada CAO como `desembolsoEjecuta
 
 El sistema SHALL calcular el saldo por ejecutar como `montoContrato - totalDesembolsosEjecutados`.
 
-#### Scenario: Saldo por ejecutar (incluye anticipo)
+#### Scenario: Saldo por ejecutar (solo CAOs, excluye anticipo)
 
 - **GIVEN** monto contrato = 16,903,840.54, anticipo = 2,328,000.00 y total desembolsos CAOs = 10,974,446.68
 - **WHEN** se genera el reporte
-- **THEN** total desembolsos = 2,328,000.00 + 10,974,446.68 = 13,302,446.68
-- **AND** saldo por ejecutar = 16,903,840.54 - 13,302,446.68 = 3,601,393.86
-- **AND** la fila ANTICIPO muestra saldo = 16,903,840.54 - 2,328,000.00 = 14,575,840.54
+- **THEN** total desembolsos = 10,974,446.68 (**excluye** el anticipo — solo suma desembolsos de CAOs)
+- **AND** saldo por ejecutar = 16,903,840.54 - 10,974,446.68 = 5,929,393.86
+- **AND** la fila ANTICIPO muestra saldo = 0 (el anticipo no tiene saldo por ejecutar)
 
 ### Requirement: Cálculo de avance físico y financiero
 
 El sistema SHALL calcular:
 - Avance físico de cada CAO: `desembolsoEfectuado / montoContrato` (porcentaje del monto del contrato ejecutado en el período)
 - Avance financiero de cada CAO: `liquidoPagado / montoContrato` (donde líquidoPagado = desembolso - descuentoAnticipo)
-- Avance físico total: `totalDesembolso / montoContrato`
-- Avance financiero total: `totalLiquido / montoContrato`
-- ANTICIPO (numero=0): avanceFisico=anticipoMonto/montoContrato, avanceFinanciero=anticipoMonto/montoContrato
+- Avance físico total: `totalDesembolso / montoContrato` — **excluye** el anticipo (solo suma desembolsos de CAOs)
+- Avance financiero total: `totalLiquido / montoContrato` — **incluye** el anticipo (totalLiquido comienza con anticipoMonto)
+- ANTICIPO (numero=0): **avanceFisico=0** (el anticipo no representa avance físico de obra), avanceFinanciero=anticipoMonto/montoContrato
 
 #### Scenario: Avance físico por CAO
 
@@ -92,6 +92,22 @@ El sistema SHALL calcular:
 - **GIVEN** CAO N°1 con desembolso 1,748,294.44, descuento 240,823.10 y monto contrato 16,903,840.54
 - **WHEN** se genera el reporte
 - **THEN** avance financiero CAO N°1 = (1,748,294.44 - 240,823.10) / 16,903,840.54 = 0.0892 (8.92%)
+
+#### Scenario: Avance físico ante ANTICIPO
+
+- **GIVEN** un proyecto con anticipoMonto=2,328,000.00
+- **WHEN** se genera el reporte
+- **THEN** la fila ANTICIPO tiene avanceFisico=0 (el anticipo es desembolso financiero, no ejecución física)
+- **AND** avanceFinanciero=anticipoMonto/montoContrato (0.1377 = 13.77%)
+
+#### Scenario: Totales excluyen anticipo en físico, lo incluyen en financiero
+
+- **GIVEN** un proyecto con anticipoMonto=2,328,000.00, CAOs con desembolso total=10,974,446.68 y líquido total=10,617,906.12
+- **WHEN** se genera el reporte
+- **THEN** totalDesembolso=10,974,446.68 (solo CAOs, sin anticipo)
+- **AND** totalLiquido=12,945,906.12 (anticipoMonto + líquido CAOs)
+- **AND** avanceFisicoTotal=10,974,446.68/montoContrato (64.92%)
+- **AND** avanceFinancieroTotal=12,945,906.12/montoContrato (76.58%)
 
 ### Requirement: Datos del desglose contractual
 
@@ -209,9 +225,9 @@ El sistema SHALL incluir una fila sintética ANTICIPO (numero=0) como primer ele
 - **WHEN** se genera el reporte
 - **THEN** la tabla financiera inicia con:
   - numero=0, periodo='ANTICIPO'
-  - desembolsoEfectuado=2,328,000.00, descuentoAnticipo=0
+  - desembolsoEfectuado=0 (el anticipo no es desembolso de CAO), descuentoAnticipo=0
   - liquidoPagado=2,328,000.00, liquidoPagadoAcumulado=2,328,000.00
-  - saldoPorEjecutar=montoContrato - 2,328,000.00
+  - saldoPorEjecutar=0 (el saldo solo considera CAOs, no anticipo)
   - avanceFisico=0, avanceFinanciero=2,328,000.00/montoContrato
 
 #### Scenario: ANTICIPO en PDF
@@ -244,6 +260,27 @@ El frontend SHALL mostrar "ANTICIPO" en lugar de "CAO N° 0" para la fila con nu
 - **THEN** el label del primer punto en el eje X es "ANTICIPO"
 - **AND** el valor programado para ANTICIPO es 0%
 - **AND** el valor programado para CAO N es N/(data.length-1)*100%
+
+### Requirement: Curva de Avance con valores acumulados
+
+La Curva de Avance SHALL mostrar valores **acumulados** (suma de todos los períodos anteriores), no valores individuales del período. Esto permite visualizar la evolución del avance a lo largo del tiempo.
+
+#### Scenario: Curva acumulada correcta
+
+- **GIVEN** un reporte con ANTICIPO (avanceFisico=0, avanceFinanciero=13.77%), CAO N°1 (avanceFisico=10.34%, avanceFinanciero=8.92%), CAO N°2 (avanceFisico=8.89%, avanceFinanciero=7.66%)
+- **WHEN** se renderiza la Curva de Avance
+- **THEN** cada punto se calcula acumulando desde el inicio:
+  - ANTICIPO: ejecutadoFisico=0%, ejecutadoFinanciero=13.77%
+  - CAO N°1: ejecutadoFisico=10.34%, ejecutadoFinanciero=22.69% (13.77%+8.92%)
+  - CAO N°2: ejecutadoFisico=19.23%, ejecutadoFinanciero=30.35% (22.69%+7.66%)
+
+#### Scenario: Línea programado es lineal
+
+- **GIVEN** un reporte con 5 filas (ANTICIPO + 4 CAOs)
+- **WHEN** se renderiza la Curva de Avance
+- **THEN** programado = (row.numero / (totalRows-1)) * 100% para cada fila
+- **AND** ANTICIPO (numero=0): programado=0%
+- **AND** CAO N°4 (numero=4): programado=100%
 
 ## MODIFIED Requirements
 
