@@ -18,7 +18,8 @@ export class AuthController {
     const result = await this.authService.login(dto.email, dto.password);
     res.cookie('auth_token', result.token, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: 'none',
+      secure: true,
       maxAge: 24 * 60 * 60 * 1000,
       path: '/',
     });
