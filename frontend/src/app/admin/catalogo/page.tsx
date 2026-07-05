@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API = '/api';
 const jefaturas = ['DI', 'JE', 'JT', 'JUPRE', 'JUS'];
 
 interface CatalogoRubro {

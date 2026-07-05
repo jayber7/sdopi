@@ -7,7 +7,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API = '/api';
 const fmt = (n: number) => n.toLocaleString('es-BO', { minimumFractionDigits: 2 });
 const pct = (n: number) => (n * 100).toFixed(2) + '%';
 const fdate = (d: string) => new Date(d).toLocaleDateString('es-BO');

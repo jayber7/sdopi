@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API = '/api';
 
 interface Evidencia {
   id: number;

@@ -4,7 +4,7 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API = '/api';
 
 interface User {
   id: number;
