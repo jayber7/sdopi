@@ -10,12 +10,12 @@ El sistema SHALL generar un reporte ejecutivo de análisis comparativo de CAOs p
 - **WHEN** se hace GET a `/api/reportes/analisis-cao/:proyectoId`
 - **THEN** el endpoint retorna un JSON con:
   - Datos del proyecto (nombre, contrato, supervisor, fiscal, contratista, fechas)
-  - Tabla financiera: un array con cada CAO (número, período, desembolso, descuento anticipo, líquido pagado, saldo por ejecutar, avance físico %, avance financiero %)
-  - Totales acumulados de la tabla financiera
+  - Tabla financiera: un array con **ANTICIPO como primer elemento (numero=0)** seguido de cada CAO (número, período, desembolso, descuento anticipo, líquido pagado, saldo por ejecutar, avance físico %, avance financiero %)
+  - Totales acumulados de la tabla financiera (incluyendo el anticipo)
   - Anticipo: monto y porcentaje
-  - Avance físico total (suma de avances físicos de todas las CAOs / monto contrato)
+  - Avance físico total (promedio de avancePct de todos los items de todas las CAOs)
   - Avance financiero total (suma de líquidos pagados / monto contrato)
-  - Saldo por pagar (monto contrato - total ejecutado)
+  - Saldo por pagar (monto contrato - total desembolsado)
 
 #### Scenario: Reporte ANALISIS con datos incompletos
 
@@ -25,10 +25,12 @@ El sistema SHALL generar un reporte ejecutivo de análisis comparativo de CAOs p
 
 #### Scenario: Reporte ANALISIS con cálculo correcto de acumulados
 
-- **GIVEN** un proyecto con CAO N°1 (ejecutado 100,000) y CAO N°2 (ejecutado 50,000)
+- **GIVEN** un proyecto con anticipoMonto=2,000,000, CAO N°1 (ejecutado 100,000) y CAO N°2 (ejecutado 50,000)
 - **WHEN** se genera el reporte
-- **THEN** la CAO N°2 muestra acumulado = 150,000, y el total muestra 150,000
-- **AND** el avance financiero de CAO N°2 es acumulado/montoContrato
+- **THEN** la tabla inicia con ANTICIPO (desembolso=2,000,000, líquido=2,000,000, saldo=montoContrato-2,000,000)
+- **AND** CAO N°1 muestra desembolsoAcumulado = 2,000,000 + 100,000
+- **AND** CAO N°2 muestra desembolsoAcumulado = 2,000,000 + 100,000 + 50,000
+- **AND** el total desembolsado = 2,000,000 + 100,000 + 50,000
 
 ### Requirement: Cálculo de deducciones por anticipo
 
@@ -62,29 +64,34 @@ El sistema SHALL calcular el líquido pagado de cada CAO como `desembolsoEjecuta
 
 El sistema SHALL calcular el saldo por ejecutar como `montoContrato - totalDesembolsosEjecutados`.
 
-#### Scenario: Saldo por ejecutar
+#### Scenario: Saldo por ejecutar (incluye anticipo)
 
-- **GIVEN** monto contrato = 16,903,840.54 y total desembolsos = 10,974,446.68
+- **GIVEN** monto contrato = 16,903,840.54, anticipo = 2,328,000.00 y total desembolsos CAOs = 10,974,446.68
 - **WHEN** se genera el reporte
-- **THEN** saldo por ejecutar = 5,929,393.86
+- **THEN** total desembolsos = 2,328,000.00 + 10,974,446.68 = 13,302,446.68
+- **AND** saldo por ejecutar = 16,903,840.54 - 13,302,446.68 = 3,601,393.86
+- **AND** la fila ANTICIPO muestra saldo = 16,903,840.54 - 2,328,000.00 = 14,575,840.54
 
 ### Requirement: Cálculo de avance físico y financiero
 
 El sistema SHALL calcular:
-- Avance físico de cada CAO: `cantidadEjecutadaPeriodo / cantidadTotalContrato` (promedio ponderado)
-- Avance financiero de cada CAO: `desembolsoEjecutado / montoContrato`
+- Avance físico de cada CAO: `desembolsoEfectuado / montoContrato` (porcentaje del monto del contrato ejecutado en el período)
+- Avance financiero de cada CAO: `liquidoPagado / montoContrato` (donde líquidoPagado = desembolso - descuentoAnticipo)
+- Avance físico total: `totalDesembolso / montoContrato`
+- Avance financiero total: `totalLiquido / montoContrato`
+- ANTICIPO (numero=0): avanceFisico=anticipoMonto/montoContrato, avanceFinanciero=anticipoMonto/montoContrato
 
 #### Scenario: Avance físico por CAO
 
-- **GIVEN** CAO N°3 con cantidad ejecutada en el período y cantidades totales del contrato por ítem
+- **GIVEN** CAO N°1 con desembolso 1,748,294.44 y monto contrato 16,903,840.54
 - **WHEN** se genera el reporte
-- **THEN** el avance físico se calcula como la suma ponderada de (cantidadEjecutada / cantidadContrato) × (montoItem / montoTotal) para cada ítem
+- **THEN** avance físico CAO N°1 = 1,748,294.44 / 16,903,840.54 = 0.1034 (10.34%)
 
 #### Scenario: Avance financiero por CAO
 
-- **GIVEN** CAO N°1 con desembolso 1,748,294.44 y monto contrato 16,903,840.54
+- **GIVEN** CAO N°1 con desembolso 1,748,294.44, descuento 240,823.10 y monto contrato 16,903,840.54
 - **WHEN** se genera el reporte
-- **THEN** avance financiero CAO N°1 = 1,748,294.44 / 16,903,840.54 = 0.1034 (10.34%)
+- **THEN** avance financiero CAO N°1 = (1,748,294.44 - 240,823.10) / 16,903,840.54 = 0.0892 (8.92%)
 
 ### Requirement: Datos del desglose contractual
 
@@ -166,6 +173,16 @@ El sistema SHALL generar un certificado financiero (Planilla de Análisis) con 1
 | 17 | Saldo por restituir anticipo | — | — | anticipoMonto − (7) |
 | 18 | Saldo efectivo por pagar | — | — | montoContrato − (3) |
 
+#### Scenario: Certificado con solo 1 CAO
+
+- **GIVEN** un proyecto con 1 sola CAO
+- **WHEN** se hace GET a `/api/reportes/analisis-cao/1?hastaCao=1`
+- **THEN** ejecutadoAcumuladoAnterior = 0
+- **AND** ejecutadoPresentePeriodo = desembolso CAO 1
+- **AND** descuentoAnticipoAcumuladoAnterior = 0
+- **AND** multaAnterior = 0
+- **AND** liquidoPagadoAcumuladoAnterior = 0
+
 #### Scenario: Certificado - valores numéricos correctos
 
 - **GIVEN** proyecto con montoContrato=16,903,840.54, anticipoPct=13.7747448%
@@ -182,7 +199,87 @@ El sistema SHALL generar un certificado financiero (Planilla de Análisis) con 1
 - **WHEN** se hace GET sin `?hastaCao`
 - **THEN** la respuesta NO incluye la sección `certificado`
 
-#### Scenario: Certificado con solo 1 CAO
+### Requirement: Fila ANTICIPO en tabla financiera
+
+El sistema SHALL incluir una fila sintética ANTICIPO (numero=0) como primer elemento de la tabla financiera, antes de las filas CAO, representando el desembolso inicial del anticipo como líquido pagado.
+
+#### Scenario: ANTICIPO en tabla financiera
+
+- **GIVEN** un proyecto con anticipoMonto = 2,328,000.00
+- **WHEN** se genera el reporte
+- **THEN** la tabla financiera inicia con:
+  - numero=0, periodo='ANTICIPO'
+  - desembolsoEfectuado=2,328,000.00, descuentoAnticipo=0
+  - liquidoPagado=2,328,000.00, liquidoPagadoAcumulado=2,328,000.00
+  - saldoPorEjecutar=montoContrato - 2,328,000.00
+  - avanceFisico=0, avanceFinanciero=2,328,000.00/montoContrato
+
+#### Scenario: ANTICIPO en PDF
+
+- **GIVEN** un PDF generado para cualquier CAO
+- **WHEN** se genera el PDF via `/api/reportes/cao/:planillaId/pdf`
+- **THEN** la tabla del PDF incluye ANTICIPO como primera fila (no=0)
+- **AND** la fila ANTICIPO muestra desembolso=anticipoMonto, descuento=0, líquido=anticipoMonto
+- **AND** los totales del PDF incluyen el anticipo
+
+#### Scenario: ANTICIPO no se muestra cuando anticipoMonto=0
+
+- **GIVEN** un proyecto sin anticipo (anticipoMonto=0)
+- **WHEN** se genera el reporte
+- **THEN** la tabla financiera NO incluye la fila ANTICIPO
+
+### Requirement: Visualización ANTICIPO en frontend
+
+El frontend SHALL mostrar "ANTICIPO" en lugar de "CAO N° 0" para la fila con numero=0, tanto en la tabla como en la curva de avance.
+
+#### Scenario: Tabla muestra ANTICIPO
+
+- **WHEN** se renderiza la tabla financiera
+- **THEN** la primera fila muestra "ANTICIPO" en lugar de "CAO N° 0"
+
+#### Scenario: Curva de Avance muestra ANTICIPO
+
+- **GIVEN** un reporte con ANTICIPO + N CAOs
+- **WHEN** se renderiza la Curva de Avance (recharts)
+- **THEN** el label del primer punto en el eje X es "ANTICIPO"
+- **AND** el valor programado para ANTICIPO es 0%
+- **AND** el valor programado para CAO N es N/(data.length-1)*100%
+
+## MODIFIED Requirements
+
+### Requirement: Cálculo de avancePct
+
+Se corrigió el cálculo de `avancePct` en el PATCH de items de planilla. Anteriormente usaba `?? 1` que no caía al fallback cuando `cantidadContrato=0`, resultando en `avancePct=0` siempre.
+
+#### BEFORE: El fallback usaba `??` que preserva 0
+```
+const cc = it.cantidadContrato ?? baseItem?.cantidadContrato ?? 1;
+// cuando baseItem.cantidadContrato = 0 → cc = 0 → avancePct = 0
+```
+
+#### AFTER: El fallback usa `||` para saltar 0
+```
+const cc = (it.cantidadContrato ?? baseItem?.cantidadContrato) || 1;
+// cuando baseItem.cantidadContrato = 0 → cc = 1 → avancePct correcto
+```
+
+El fix se aplicó en las 3 ramas del PATCH handler (`planillas.service.ts`):
+1. Rama `avanceId` (line 158): `?? 1` → `|| 1`
+2. Rama `itemId + existing` (line 179): `?? 1` → `|| 1`
+3. Rama `itemId + nuevo` (line 188): `?? 1` → `|| 1`
+
+#### Scenario: avancePct correcto al PATCHear items
+
+- **GIVEN** un avance con cantidad=50 y cantidadContrato=100 (item.cantidadContrato=0)
+- **WHEN** se hace PATCH a `/api/planillas/:id/items` con `{ cantidad: 50 }`
+- **THEN** avancePct = 50 / 1 * 100 = 5000% (usando fallback 1)
+- **NOTA:** En realidad el backend también busca el Item para cantidadContrato, pero como Item.cantidadContrato siempre es 0 (importado del catálogo), el fallback a 1 es necesario
+
+#### Scenario: Script de migración para datos existentes
+
+- **GIVEN** avances con cantidadContrato>0 y avancePct=0
+- **WHEN** se ejecuta `node scripts/migrate-avance-pct.js`
+- **THEN** todos los avances con cantidadContrato>0 se actualizan: avancePct = (cantidad / cantidadContrato) * 100
 
 - **GIVEN** un proyecto con 1 sola CAO
 - **WHEN** se hace GET a `/api/reportes/analisis-cao/1?hastaCao=1`

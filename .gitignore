@@ -11,3 +11,5 @@ coverage/
 .playwright-cli/
 .playwright-mcp/
 Docs
+.vercel
+.env*

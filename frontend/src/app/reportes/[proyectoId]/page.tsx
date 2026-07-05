@@ -247,12 +247,17 @@ function AnalisisReport({ data }: { data: AnalisisData }) {
 }
 
 function CurvaAvance({ data }: { data: AnalisisRow[] }) {
-  const chartData = data.map(r => ({
-    cao: r.numero === 0 ? 'ANTICIPO' : `CAO ${r.numero}`,
-    programado: data.length > 1 ? (r.numero / (data.length - 1)) * 100 : 0,
-    ejecutadoFisico: r.avanceFisico * 100,
-    ejecutadoFinanciero: r.avanceFinanciero * 100,
-  }));
+  let acFisico = 0, acFinanciero = 0;
+  const chartData = data.map(r => {
+    acFisico += r.avanceFisico;
+    acFinanciero += r.avanceFinanciero;
+    return {
+      cao: r.numero === 0 ? 'ANTICIPO' : `CAO ${r.numero}`,
+      programado: data.length > 1 ? (r.numero / (data.length - 1)) * 100 : 0,
+      ejecutadoFisico: acFisico * 100,
+      ejecutadoFinanciero: acFinanciero * 100,
+    };
+  });
   const pctLabel = (v: number) => v.toFixed(2) + '%';
 
   return (

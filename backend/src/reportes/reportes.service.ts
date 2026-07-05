@@ -27,7 +27,7 @@ export class ReportesService {
     const anticipoMonto = proyecto.anticipoMonto ?? Math.round(montoContrato * (anticipoPct / 100) * 100) / 100;
 
     const tablaFinanciera: AnalisisCaoRow[] = [];
-    let totalDesembolso = anticipoMonto;
+    let totalDesembolso = 0;
     let totalDescuento = 0;
     let totalLiquido = anticipoMonto;
 
@@ -37,12 +37,12 @@ export class ReportesService {
         periodo: 'ANTICIPO',
         fechaInicio: proyecto.ordenProceder.toISOString(),
         fechaFin: proyecto.ordenProceder.toISOString(),
-        desembolsoEfectuado: Math.round(anticipoMonto * 100) / 100,
+        desembolsoEfectuado: 0,
         descuentoAnticipo: 0,
         descuentoAnticipoAcumulado: 0,
         liquidoPagado: Math.round(anticipoMonto * 100) / 100,
         liquidoPagadoAcumulado: Math.round(anticipoMonto * 100) / 100,
-        saldoPorEjecutar: Math.round((montoContrato - anticipoMonto) * 100) / 100,
+        saldoPorEjecutar: 0,
         avanceFisico: 0,
         avanceFinanciero: montoContrato > 0 ? Math.round((anticipoMonto / montoContrato) * 10000) / 10000 : 0,
       });
@@ -56,8 +56,6 @@ export class ReportesService {
       totalDescuento += periodoDescuento;
       totalLiquido += periodoLiquido;
 
-      const avanceFisicoPeriodo = p.avances.reduce((s, a) => s + a.avancePct / 100, 0) / (p.avances.length || 1);
-
       tablaFinanciera.push({
         numero: p.numero,
         periodo: p.periodo,
@@ -69,14 +67,13 @@ export class ReportesService {
         liquidoPagado: Math.round(periodoLiquido * 100) / 100,
         liquidoPagadoAcumulado: Math.round(totalLiquido * 100) / 100,
         saldoPorEjecutar: Math.round((montoContrato - totalDesembolso) * 100) / 100,
-        avanceFisico: Math.round(avanceFisicoPeriodo * 10000) / 10000,
+        avanceFisico: montoContrato > 0 ? Math.round((periodoDesembolso / montoContrato) * 10000) / 10000 : 0,
         avanceFinanciero: montoContrato > 0 ? Math.round((periodoLiquido / montoContrato) * 10000) / 10000 : 0,
       });
     });
 
-    const itemsCount = planillas.reduce((s, p) => s + p.avances.length, 0);
-    const avanceFisicoTotal = itemsCount > 0
-      ? Math.round(planillas.reduce((s, p) => s + p.avances.reduce((s2, a) => s2 + a.avancePct / 100, 0), 0) / itemsCount * 10000) / 10000
+    const avanceFisicoTotal = montoContrato > 0
+      ? Math.round((totalDesembolso / montoContrato) * 10000) / 10000
       : 0;
     const avanceFinancieroTotal = montoContrato > 0
       ? Math.round((totalLiquido / montoContrato) * 10000) / 10000
@@ -273,13 +270,13 @@ export class ReportesService {
     const anticipoMonto = p.anticipoMonto ?? Math.round(montoContrato * (anticipoPct / 100) * 100) / 100;
 
     const rows: { no: number; desembolso: number; descuento: number; liquido: number; saldo: number; af: number; multa: number }[] = [];
-    let acumDesembolso = anticipoMonto;
+    let acumDesembolso = 0;
     let acumDescuento = 0;
     let acumLiquido = anticipoMonto;
     let acumMulta = 0;
 
     if (anticipoMonto > 0) {
-      rows.push({ no: 0, desembolso: anticipoMonto, descuento: 0, liquido: anticipoMonto, saldo: montoContrato - anticipoMonto, af: 0, multa: 0 });
+      rows.push({ no: 0, desembolso: 0, descuento: 0, liquido: anticipoMonto, saldo: 0, af: 0, multa: 0 });
     }
 
     caos.forEach((c) => {
@@ -291,9 +288,7 @@ export class ReportesService {
       acumDescuento += descuento;
       acumLiquido += liquido;
       acumMulta += multa;
-      const af = c.avances.length > 0
-        ? Math.round(c.avances.reduce((s, a) => s + a.avancePct, 0) / c.avances.length * 100) / 100
-        : 0;
+      const af = montoContrato > 0 ? Math.round((desembolso / montoContrato) * 10000) / 100 : 0;
       rows.push({ no: c.numero, desembolso, descuento, liquido, saldo: montoContrato - acumDesembolso, af, multa });
     });
 
