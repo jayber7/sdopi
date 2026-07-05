@@ -35,15 +35,16 @@ export class CatalogController {
     @Param('id', ParseIntPipe) proyectoId: number,
     @Body() body: { rubros: { rubroCatalogoId: number; itemCatalogoIds: number[] }[] },
   ) {
-    for (const r of body.rubros) {
+    const rubrosExistentes = await this.prisma.rubro.count({ where: { proyectoId } });
+    for (let idx = 0; idx < body.rubros.length; idx++) {
+      const r = body.rubros[idx];
       const cat = await this.prisma.rubroCatalogo.findUnique({
         where: { id: r.rubroCatalogoId },
         include: { items: { where: { id: { in: r.itemCatalogoIds } } } },
       });
       if (!cat) continue;
 
-      const m = cat.nombre.match(/^(M\d+)\s*-\s*/);
-      const codigo = m ? m[1] : '';
+      const codigo = `M${String(rubrosExistentes + idx + 1).padStart(2, '0')}`;
       const rubro = await this.prisma.rubro.create({
         data: { codigo, nombre: cat.nombre, proyectoId },
       });

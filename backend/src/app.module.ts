@@ -5,8 +5,10 @@ import { UsersModule } from './users/users.module';
 import { ProyectosModule } from './proyectos/proyectos.module';
 import { PlanillasModule } from './planillas/planillas.module';
 import { EvidenciaModule } from './evidencia/evidencia.module';
+import { DatosComplementariosModule } from './datos-complementarios/datos-complementarios.module';
+import { ReportesModule } from './reportes/reportes.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, ProyectosModule, PlanillasModule, EvidenciaModule],
+  imports: [PrismaModule, AuthModule, UsersModule, ProyectosModule, PlanillasModule, EvidenciaModule, DatosComplementariosModule, ReportesModule],
 })
 export class AppModule {}

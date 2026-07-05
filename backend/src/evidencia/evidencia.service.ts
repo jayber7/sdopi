@@ -80,9 +80,9 @@ export class EvidenciaService {
         verificacionObservaciones: verification.observaciones,
         categoria: dto.categoria as any ?? 'VISTA_GENERAL',
         descripcion: dto.descripcion ?? null,
-        avanceItemId,
-        planillaId,
-        userId,
+        avanceItem: { connect: { id: avanceItemId } },
+        planilla: { connect: { id: planillaId } },
+        user: { connect: { id: userId } },
       },
       include: { avanceItem: true, user: { select: { id: true, nombre: true } } },
     });
@@ -169,7 +169,7 @@ export class EvidenciaService {
   async remove(id: number, user?: any) {
     const evidencia = await this.prisma.evidenciaFotografica.findUnique({ where: { id } });
     if (!evidencia) throw new NotFoundException('Evidencia no encontrada');
-    if (user?.role === 'operador' && evidencia.userId !== user.id) {
+    if (user?.role === 'operador' && evidencia.userId !== user.userId) {
       throw new ForbiddenException('No puedes eliminar una evidencia que no te pertenece');
     }
     await deleteFromCloudinary(evidencia.publicId);

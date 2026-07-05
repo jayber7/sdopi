@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Fragment, forwardRef, useImperativeHandle, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import LlenadoAsistido from '../LlenadoAsistido';
 import { mergeParsed } from '@/lib/proyecto-parser';
@@ -261,6 +261,7 @@ export default function ProyectoDetailPage() {
           <div className="flex gap-2 mt-3">
             {(isAdmin || isOper) && <button onClick={openEdit} className="btn btn-outline btn-xs">Editar proyecto</button>}
             {isAdmin && <button onClick={desactivar} className="btn btn-danger btn-xs">Desactivar proyecto</button>}
+            <button onClick={() => window.open(`/reportes/${proyecto.id}`, '_blank')} className="btn btn-outline btn-xs">📊 Reportes</button>
           </div>
         </div>
       </div>
@@ -765,18 +766,18 @@ const BaseGrid = forwardRef(function BaseGrid({ planilla, isAdmin, isOper, onRef
                   const isRechazado = av.aprobado === false;
                   const isLocked = saved.has(av.id);
                   return (
-                    <tr key={av.id} className={isPending ? 'bg-yellow-50' : isRechazado ? 'bg-red-50' : ''}>
+                  <tr key={av.id} data-rubro-codigo={g.codigo} data-item-numero={av.item?.numero ?? 'N'} className={isPending ? 'bg-yellow-50' : isRechazado ? 'bg-red-50' : ''}>
                       <td>{av.item?.numero ?? 'N'}</td>
                       <td>{av.descripcion ?? av.item?.descripcion ?? ''}</td>
                       <td style={{ padding: '8px 4px' }}>{av.unidad ?? av.item?.unidad ?? ''}</td>
                       <td className="text-right">
                         {canEdit && av.aprobado !== true && !isLocked
-                          ? <input type="number" step="0.01" value={pu} onChange={(e) => setEditPU((m) => ({ ...m, [av.id]: +e.target.value }))} className="input input-sm w-20 text-right" />
-                          : fmt(pu)}
-                      </td>
-                      <td className="text-right">
-                        {canEdit && av.aprobado !== true && !isLocked
-                          ? <input type="number" step="0.01" value={cc} onChange={(e) => setEditCC((m) => ({ ...m, [av.id]: +e.target.value }))} className="input input-sm w-20 text-right" />
+                      ? <input type="number" step="0.01" value={pu} onChange={(e) => setEditPU((m) => ({ ...m, [av.id]: +e.target.value }))} className="input input-sm w-20 text-right" data-item-numero={av.item?.numero ?? 'N'} data-field="pu" />
+                      : fmt(pu)}
+                    </td>
+                    <td className="text-right">
+                      {canEdit && av.aprobado !== true && !isLocked
+                        ? <input type="number" step="0.01" value={cc} onChange={(e) => setEditCC((m) => ({ ...m, [av.id]: +e.target.value }))} className="input input-sm w-20 text-right" data-item-numero={av.item?.numero ?? 'N'} data-field="cc" />
                           : fmt(cc)}
                       </td>
                       <td className="text-right">{fmt(mo)}</td>
@@ -1061,7 +1062,7 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
                 const isPending = av.aprobado === null && planilla.estado !== 'borrador';
                 const isRechazado = av.aprobado === false;
                 return (
-                  <tr key={av.id} className={isPending ? 'bg-yellow-50' : isRechazado ? 'bg-red-50' : ''}>
+                  <tr key={av.id} data-rubro-codigo={g.codigo} className={isPending ? 'bg-yellow-50' : isRechazado ? 'bg-red-50' : ''}>
                     <td className="text-center" style={{ padding: '8px 4px' }}>
                       {canEvidencia ? (
                         <button
@@ -1087,9 +1088,9 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
                     <td className="text-right">{fmt(h.cantidad)}</td>
                     <td className="text-right">{fmt(h.monto)}</td>
                     <td className="text-right">
-                      {isBorrador && isOper && av.itemId && av.aprobado !== true && !isLockedCAO ? (
+                      {isBorrador && (isAdmin || isOper) && av.itemId && av.aprobado !== true && !isLockedCAO ? (
                         <input type="number" step="0.01" value={cant} onChange={(e) => setEditCant((m) => ({ ...m, [av.id]: +e.target.value }))}
-                          className="input input-sm w-36 text-right" />
+                          className="input input-sm w-36 text-right" data-item-numero={av.item?.numero ?? 'N'} data-field="cantidad" />
                       ) : fmt(cant)}
                     </td>
                     <td className="text-right">{fmt(montoPresente)}</td>
@@ -1112,7 +1113,7 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
                         )}
                       </td>
                     )}
-                    {isBorrador && isOper && av.aprobado !== true && (
+                    {isBorrador && (isAdmin || isOper) && av.aprobado !== true && (
                       <td className="text-center">
                         <div className="flex justify-center gap-1">
                           {isLockedCAO ? (

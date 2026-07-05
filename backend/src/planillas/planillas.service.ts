@@ -155,7 +155,7 @@ export class PlanillasService {
         const baseItem = it.itemId ? await this.prisma.item.findUnique({ where: { id: it.itemId } }) : null;
         const pu = it.precioUnitario ?? existing.precioUnitario ?? baseItem?.precioUnitario ?? 0;
         const monto = it.monto ?? it.cantidad * pu;
-        const cc = it.cantidadContrato ?? baseItem?.cantidadContrato ?? 1;
+        const cc = (it.cantidadContrato ?? baseItem?.cantidadContrato) || 1;
         const avancePct = cc > 0 ? (it.cantidad / cc) * 100 : 0;
         await this.prisma.avanceItem.update({
           where: { id: it.avanceId },
@@ -176,7 +176,7 @@ export class PlanillasService {
         if (existing) {
           const pu = it.precioUnitario ?? existing.precioUnitario ?? 0;
           const monto = it.monto ?? it.cantidad * pu;
-          const cc = it.cantidadContrato ?? existing.cantidadContrato ?? 1;
+          const cc = (it.cantidadContrato ?? existing.cantidadContrato) || 1;
           const avancePct = cc > 0 ? (it.cantidad / cc) * 100 : 0;
           await this.prisma.avanceItem.update({
             where: { id: existing.id },
@@ -185,7 +185,7 @@ export class PlanillasService {
         } else {
           const pu = it.precioUnitario ?? 0;
           const monto = it.monto ?? it.cantidad * pu;
-          const cc = it.cantidadContrato ?? 1;
+          const cc = it.cantidadContrato || 1;
           const avancePct = cc > 0 ? (it.cantidad / cc) * 100 : 0;
           await this.prisma.avanceItem.create({
             data: {
@@ -265,7 +265,8 @@ export class PlanillasService {
   }
 
   async aprobarTodos(id: number, force = false) {
-    if (!force) {
+    const skipEvidenceCheck = process.env.SKIP_EVIDENCE_CHECK === 'true';
+    if (!force && !skipEvidenceCheck) {
       const itemsSinEvidencia = await this.prisma.avanceItem.findMany({
         where: {
           planillaId: id,

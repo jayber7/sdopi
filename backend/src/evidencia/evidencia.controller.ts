@@ -27,7 +27,7 @@ export class EvidenciaController {
     @CurrentUser() user: any,
   ) {
     if (!file) throw new Error('No se recibió ninguna imagen');
-    return this.service.upload(planillaId, avanceItemId, file, dto, user.id);
+    return this.service.upload(planillaId, avanceItemId, file, dto, user.userId);
   }
 
   @Roles('admin', 'supervisor', 'operador', 'consulta')

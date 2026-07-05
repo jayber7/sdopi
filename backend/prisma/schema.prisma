@@ -33,14 +33,15 @@ enum Jefatura {
 }
 
 model Proyecto {
-  id              Int      @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   nombre          String
   contratoNro     String
   montoContrato   Float
-  anticipoPct     Float    @default(13.7747448)
+  anticipoPct     Float     @default(13.7747448)
+  anticipoMonto   Float?
   ordenProceder   DateTime
   fechaConclusion DateTime
-  suspendidoDias  Int      @default(0)
+  suspendidoDias  Int       @default(0)
   direccion       String
   latitud         Float?
   longitud        Float?
@@ -49,12 +50,13 @@ model Proyecto {
   contratista     String
   supervisor      String
   fiscal          String
-  jefatura        Jefatura @default(DI)
-  activo          Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  jefatura        Jefatura  @default(DI)
+  activo          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   rubros          Rubro[]
   planillas       PlanillaCAO[]
+  desembolsosProgramados DesembolsoProgramado[]
 }
 
 model RubroCatalogo {
@@ -115,6 +117,8 @@ model PlanillaCAO {
   derivados      PlanillaCAO[] @relation("PlanillaBase")
   avances        AvanceItem[]
   evidencias     EvidenciaFotografica[]
+
+  multas          Multa[]
 
   @@unique([planillaBaseId, numero])
 }
@@ -181,4 +185,24 @@ model AvanceItem {
   planillaId        Int
   planilla          PlanillaCAO  @relation(fields: [planillaId], references: [id], onDelete: Cascade)
   evidencias        EvidenciaFotografica[]
+}
+
+model Multa {
+  id          Int         @id @default(autoincrement())
+  monto       Float
+  descripcion String
+  fecha       DateTime
+  planillaId  Int
+  planilla    PlanillaCAO @relation(fields: [planillaId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+}
+
+model DesembolsoProgramado {
+  id              Int      @id @default(autoincrement())
+  mes             String
+  montoProgramado Float
+  descripcion     String?
+  proyectoId      Int
+  proyecto        Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
 }

@@ -42,7 +42,7 @@ export class ProyectosService {
 
   async create(data: {
     nombre: string; contratoNro: string; montoContrato: number;
-    anticipoPct?: number; ordenProceder: string; fechaConclusion: string;
+    anticipoPct?: number; anticipoMonto?: number; ordenProceder: string; fechaConclusion: string;
     suspendidoDias?: number; direccion: string;
     latitud?: number; longitud?: number;
     contratista: string; supervisor: string; fiscal: string;

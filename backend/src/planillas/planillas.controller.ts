@@ -49,7 +49,7 @@ export class PlanillasController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('operador')
+  @Roles('admin', 'operador')
   @Patch(':id/enviar')
   enviar(@Param('id', ParseIntPipe) id: number) {
     return this.service.enviar(id);

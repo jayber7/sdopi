@@ -40,8 +40,8 @@ export default function AdminCatalogoPage() {
     setItems({}); setExpanded({});
   }, [jefatura]);
 
-  async function loadItems(rubroId: number) {
-    if (items[rubroId]) return;
+  async function loadItems(rubroId: number, force?: boolean) {
+    if (items[rubroId] && !force) return;
     const r = await fetch(`${API}/catalogo/rubros/${rubroId}/items`, { credentials: 'include' });
     if (r.ok) { const data = await r.json(); setItems(p => ({ ...p, [rubroId]: data })); }
   }
@@ -83,7 +83,7 @@ export default function AdminCatalogoPage() {
         await apiFetch('POST', `${API}/catalogo/rubros/${editItem.rubroCatalogoId}/items`, { numero: editItem.numero, descripcion: editItem.descripcion, unidad: editItem.unidad });
       }
       setEditItem(null);
-      await loadItems(editItem.rubroCatalogoId);
+      await loadItems(editItem.rubroCatalogoId, true);
       const r = await fetch(`${API}/catalogo/rubros?jefatura=${jefatura}`, { credentials: 'include' });
       if (r.ok) setRubros(await r.json());
     } catch {}
@@ -93,7 +93,7 @@ export default function AdminCatalogoPage() {
     if (!confirm('Eliminar item del catálogo?')) return;
     try {
       await apiFetch('DELETE', `${API}/catalogo/items/${id}`);
-      setItems(p => ({ ...p, [rubroId]: p[rubroId]?.filter(i => i.id !== id) || [] }));
+      await loadItems(rubroId, true);
       const r = await fetch(`${API}/catalogo/rubros?jefatura=${jefatura}`, { credentials: 'include' });
       if (r.ok) setRubros(await r.json());
     } catch {}
@@ -186,9 +186,9 @@ export default function AdminCatalogoPage() {
                   <table>
                     <thead>
                       <tr>
-                        <th style={{ width: 40 }}>N°</th>
+                        <th style={{ width: 60 }}>N°</th>
                         <th>Descripción</th>
-                        <th style={{ width: 60 }}>Und</th>
+                        <th style={{ width: 80 }}>Und</th>
                         <th style={{ width: 100 }}>Acción</th>
                       </tr>
                     </thead>
@@ -197,9 +197,9 @@ export default function AdminCatalogoPage() {
                         if (editItem?.id === ci.id) {
                           return (
                             <tr key={ci.id}>
-                              <td><input type="number" value={editItem.numero} onChange={e => setEditItem({ ...editItem, numero: +e.target.value })} className="input input-sm w-14" /></td>
+                              <td><input type="number" value={editItem.numero} onChange={e => setEditItem({ ...editItem, numero: +e.target.value })} className="input input-sm w-16" /></td>
                               <td><input value={editItem.descripcion} onChange={e => setEditItem({ ...editItem, descripcion: e.target.value })} className="input input-sm w-full" /></td>
-                              <td><input value={editItem.unidad} onChange={e => setEditItem({ ...editItem, unidad: e.target.value })} className="input input-sm w-16" /></td>
+                              <td><input value={editItem.unidad} onChange={e => setEditItem({ ...editItem, unidad: e.target.value })} className="input input-sm w-20" /></td>
                               <td>
                                 <button onClick={saveItem} className="btn btn-primary btn-xs mr-1">Guardar</button>
                                 <button onClick={() => setEditItem(null)} className="btn btn-ghost btn-xs">Cancelar</button>
@@ -225,9 +225,9 @@ export default function AdminCatalogoPage() {
 
                 {(editItem?.rubroCatalogoId === r.id && !items[r.id]?.find(i => i.id === editItem.id)) && (
                   <div className="flex items-center gap-2 px-3 py-2" style={{ borderTop: '1px solid var(--color-border-light)', background: 'var(--color-accent-faint)' }}>
-                    <input type="number" value={editItem.numero} onChange={e => setEditItem({ ...editItem, numero: +e.target.value })} className="input input-sm w-14" placeholder="N°" />
+                    <input type="number" value={editItem.numero} onChange={e => setEditItem({ ...editItem, numero: +e.target.value })} className="input input-sm w-16" placeholder="N°" />
                     <input value={editItem.descripcion} onChange={e => setEditItem({ ...editItem, descripcion: e.target.value })} className="input input-sm flex-1" placeholder="Descripción" />
-                    <input value={editItem.unidad} onChange={e => setEditItem({ ...editItem, unidad: e.target.value })} className="input input-sm w-16" placeholder="Und" />
+                    <input value={editItem.unidad} onChange={e => setEditItem({ ...editItem, unidad: e.target.value })} className="input input-sm w-20" placeholder="Und" />
                     <button onClick={saveItem} className="btn btn-primary btn-xs">Guardar</button>
                     <button onClick={() => setEditItem(null)} className="btn btn-ghost btn-xs">Cancelar</button>
                   </div>
