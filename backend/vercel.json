@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run build && npx prisma generate",
+  "functions": {
+    "api/index.ts": {
+      "runtime": "@vercel/node@4",
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
+}
