@@ -98,6 +98,28 @@ La interfaz SHALL mostrar el detalle del proyecto con botones de acción en la c
 - **THEN** se muestra confirmación
 - **AND** al confirmar, se redirige a /proyectos
 
+### Requirement: Selección de ubicación con provincia, municipio y mapa interactivo
+El formulario de proyecto SHALL permitir seleccionar ubicación eligiendo provincia y municipio, y luego ajustando coordenadas en un mapa Leaflet.
+
+#### Scenario: Seleccionar provincia y municipio
+- **WHEN** el usuario selecciona una provincia
+- **THEN** el select de municipios se filtra por esa provincia
+- **AND** se limpian latitud, longitud y dirección
+- **WHEN** el usuario selecciona un municipio
+- **THEN** el mapa se centra en las coordenadas del municipio con un marcador
+- **AND** los inputs lat/lng se actualizan
+- **AND** se consulta Nominatim para rellenar la dirección automáticamente
+
+#### Scenario: Ajustar coordenadas en el mapa
+- **WHEN** el usuario hace clic o arrastra el marcador en el mapa
+- **THEN** los inputs lat/lng se actualizan
+- **AND** se ejecuta reverse geocoding para actualizar la dirección
+
+#### Scenario: Búsqueda de lugares en el mapa
+- **WHEN** el usuario busca un lugar en el campo de búsqueda del mapa
+- **THEN** se muestran resultados de Nominatim
+- **AND** al seleccionar un resultado, el mapa se centra allí
+
 ### Requirement: Control de Acceso por Rol
 El sistema SHALL restringir las acciones de proyecto según el rol del usuario.
 

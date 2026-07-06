@@ -2,19 +2,13 @@
 
 ### Requirement: Mapa interactivo para selección de coordenadas
 
-El sistema SHALL mostrar un mapa Leaflet interactivo en el formulario de proyecto cuando el usuario selecciona el modo "Coordenadas", permitiendo seleccionar la ubicación del proyecto mediante clic o arrastre de marcador.
+El sistema SHALL mostrar un mapa Leaflet interactivo debajo de los selects de provincia/municipio en el formulario de proyecto, permitiendo seleccionar la ubicación del proyecto mediante clic o arrastre de marcador.
 
-#### Scenario: MapPicker se muestra en modo coordenadas
+#### Scenario: MapPicker se muestra en el formulario
 - GIVEN el modal de creación/edición de proyecto está abierto
-- WHEN el usuario selecciona el modo "Coordenadas"
-- THEN se muestra un mapa Leaflet interactivo centrado en Oruro (default: -17.983, -67.15, zoom 7)
+- THEN se muestran los selects de provincia y municipio
+- THEN debajo se muestra un mapa Leaflet interactivo centrado en Oruro (default: -17.983, -67.15, zoom 7)
 - AND debajo del mapa se muestran los inputs numéricos de latitud y longitud
-
-#### Scenario: MapPicker se oculta en modo calles
-- GIVEN el modal de creación/edición de proyecto abierto con el mapa visible
-- WHEN el usuario selecciona el modo "Calles"
-- THEN el mapa se oculta
-- AND se muestra solo el input de dirección
 
 #### Scenario: Seleccionar coordenadas con clic en el mapa
 - WHEN el usuario hace clic en un punto del mapa
@@ -42,7 +36,7 @@ El sistema SHALL mostrar un mapa Leaflet interactivo en el formulario de proyect
 
 #### Scenario: Precargar coordenadas en edición
 - GIVEN un proyecto existente con `latitud` y `longitud` no nulos
-- WHEN el usuario abre el modal de edición y cambia a modo coordenadas
+- WHEN el usuario abre el modal de edición
 - THEN el mapa se centra en las coordenadas del proyecto
 - AND se coloca un marcador en esa posición
 
