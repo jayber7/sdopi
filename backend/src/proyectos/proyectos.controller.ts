@@ -22,9 +22,12 @@ export class ProyectosController {
   @Roles('admin', 'operador')
   @Post()
   create(@Body() body: any) {
-    const required = ['nombre', 'contratoNro', 'montoContrato', 'ordenProceder', 'fechaConclusion', 'direccion', 'contratista', 'supervisor', 'fiscal'];
+    const required = ['nombre', 'contratoNro', 'montoContrato', 'ordenProceder', 'fechaConclusion', 'direccion', 'contratista', 'supervisor', 'fiscal', 'latitud', 'longitud'];
     for (const k of required) {
       if (body[k] === undefined || body[k] === null || body[k] === '') throw new BadRequestException(`${k} es requerido`);
+    }
+    if (typeof body.latitud !== 'number' || typeof body.longitud !== 'number') {
+      throw new BadRequestException('latitud y longitud deben ser números');
     }
     return this.service.create(body);
   }
@@ -32,6 +35,11 @@ export class ProyectosController {
   @Roles('admin', 'operador')
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+    if (body.latitud !== undefined || body.longitud !== undefined) {
+      if (body.latitud == null || body.longitud == null || body.latitud === '' || body.longitud === '') {
+        throw new BadRequestException('latitud y longitud son requeridas');
+      }
+    }
     return this.service.update(id, body);
   }
 

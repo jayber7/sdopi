@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import LlenadoAsistido from '../LlenadoAsistido';
 import { mergeParsed } from '@/lib/proyecto-parser';
 import { provincias, municipios } from '@/lib/municipios';
+import { reverseNominatim } from '@/lib/osm-services';
 import { EvidenciaStatsButton, PanelEvidencias, PanelGeneralEvidencias } from './PanelEvidencias';
 import dynamic from 'next/dynamic';
 
@@ -65,7 +66,9 @@ export default function ProyectoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState(false);
   const [editForm, setEditForm] = useState({ ...INIT_FORM });
-  const [editUbicacionTipo, setEditUbicacionTipo] = useState<'calles' | 'coordenadas'>('calles');
+  const editFormRef = useRef(editForm);
+  useEffect(() => { editFormRef.current = editForm; }, [editForm]);
+
   const [editHeader, setEditHeader] = useState(false);
   const [headerForm, setHeaderForm] = useState({ periodo: '', fechaInicio: '', fechaFin: '' });
   const puccRef = useRef<{ saveAllPending: () => Promise<void> }>(null);
@@ -161,30 +164,28 @@ export default function ProyectoDetailPage() {
       supervisor: proyecto.supervisor, fiscal: proyecto.fiscal,
       jefatura: proyecto.jefatura,
     });
-    setEditUbicacionTipo(tieneCoords ? 'coordenadas' : 'calles');
     setEditModal(true);
   }
 
   async function saveEdit() {
     if (!proyecto) return;
-    const required: (keyof typeof editForm)[] = ['nombre', 'contratoNro', 'montoContrato', 'ordenProceder', 'fechaConclusion', 'direccion', 'contratista', 'supervisor', 'fiscal'];
+    const f = editFormRef.current;
+    const required: (keyof typeof f)[] = ['nombre', 'contratoNro', 'montoContrato', 'ordenProceder', 'fechaConclusion', 'direccion', 'contratista', 'supervisor', 'fiscal'];
     for (const k of required) {
-      if (!editForm[k] && editForm[k] !== 0) { alert(`Campo requerido: ${k}`); return; }
+      if (!f[k] && f[k] !== 0) { alert(`Campo requerido: ${k}`); return; }
+    }
+    if (!f.latitud || !f.longitud) {
+      alert('Debe seleccionar una ubicación en el mapa (coordenadas)');
+      return;
     }
     const body: any = {
-      ...editForm,
-      montoContrato: Number(editForm.montoContrato),
-      anticipoPct: Number(editForm.anticipoPct),
-      suspendidoDias: Number(editForm.suspendidoDias),
+      ...f,
+      montoContrato: Number(f.montoContrato),
+      anticipoPct: Number(f.anticipoPct),
+      suspendidoDias: Number(f.suspendidoDias),
+      latitud: Number(f.latitud),
+      longitud: Number(f.longitud),
     };
-    if (editUbicacionTipo === 'coordenadas') {
-      body.latitud = editForm.latitud ? Number(editForm.latitud) : undefined;
-      body.longitud = editForm.longitud ? Number(editForm.longitud) : undefined;
-      body.direccion = editForm.direccion || '';
-    } else {
-      body.latitud = undefined;
-      body.longitud = undefined;
-    }
     const r = await fetch(`${API}/proyectos/${proyecto.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body), credentials: 'include',
@@ -465,34 +466,37 @@ export default function ProyectoDetailPage() {
                   <option value="JUS">JUS</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2 rounded-lg p-1" style={{ background: 'var(--color-border-light)', border: '1px solid var(--color-border)' }}>
-                <button type="button" onClick={() => setEditUbicacionTipo('calles')}
-                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${editUbicacionTipo === 'calles' ? 'bg-white shadow-sm' : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'}`}>Calles</button>
-                <button type="button" onClick={() => setEditUbicacionTipo('coordenadas')}
-                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${editUbicacionTipo === 'coordenadas' ? 'bg-white shadow-sm' : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'}`}>Coordenadas</button>
-              </div>
-              {editUbicacionTipo === 'calles' ? (
-                <input placeholder="Calles / Ubicación del proyecto" value={editForm.direccion} onChange={e => setEditForm({ ...editForm, direccion: e.target.value })} className="input" />
-              ) : (
-                <MapPicker
-                  lat={editForm.latitud ? parseFloat(editForm.latitud) : undefined}
-                  lng={editForm.longitud ? parseFloat(editForm.longitud) : undefined}
-                  onChange={(lat, lng) => setEditForm({ ...editForm, latitud: String(lat), longitud: String(lng) })}
-                  onReverseGeocode={(dir) => setEditForm({ ...editForm, direccion: dir })}
-                />
-              )}
               <div className="grid grid-cols-2 gap-3">
-                <select value={editForm.provincia} onChange={e => setEditForm({ ...editForm, provincia: e.target.value, municipio: '' })} className="input">
+                <select value={editForm.provincia} onChange={e => setEditForm({ ...editForm, provincia: e.target.value, municipio: '', latitud: '', longitud: '', direccion: '' })} className="input">
                   <option value="">Seleccionar provincia</option>
                   {provincias.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
-                <select value={editForm.municipio} onChange={e => setEditForm({ ...editForm, municipio: e.target.value })} className="input">
+                <select value={editForm.municipio} onChange={e => {
+                  const m = municipios.find(m => m.nombre === e.target.value);
+                  setEditForm(prev => ({
+                    ...prev,
+                    municipio: e.target.value,
+                    latitud: m ? String(m.coords[0]) : prev.latitud,
+                    longitud: m ? String(m.coords[1]) : prev.longitud,
+                  }));
+                  if (m) {
+                    reverseNominatim(m.coords[0], m.coords[1]).then(dir => {
+                      if (dir) setEditForm(prev => ({ ...prev, direccion: dir }));
+                    });
+                  }
+                }} className="input">
                   <option value="">Seleccionar municipio</option>
                   {municipios.filter((m) => !editForm.provincia || m.provincia === editForm.provincia).map((m) => (
                     <option key={m.id} value={m.nombre}>{m.nombre}</option>
                   ))}
                 </select>
               </div>
+              <MapPicker
+                lat={editForm.latitud ? parseFloat(editForm.latitud) : undefined}
+                lng={editForm.longitud ? parseFloat(editForm.longitud) : undefined}
+                onChange={(lat, lng) => setEditForm(prev => ({ ...prev, latitud: String(lat), longitud: String(lng) }))}
+                onReverseGeocode={(dir) => setEditForm(prev => ({ ...prev, direccion: dir }))}
+              />
               <input placeholder="Contratista" value={editForm.contratista} onChange={e => setEditForm({ ...editForm, contratista: e.target.value })} className="input" />
               <div className="grid grid-cols-2 gap-3">
                 <input placeholder="Supervisor" value={editForm.supervisor} onChange={e => setEditForm({ ...editForm, supervisor: e.target.value })} className="input" />

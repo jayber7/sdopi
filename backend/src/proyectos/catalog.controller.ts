@@ -71,6 +71,7 @@ export class CatalogController {
     if (base) {
       const items = await this.prisma.item.findMany({
         where: { rubro: { proyectoId } },
+        include: { rubro: true },
       });
       const existingAvances = await this.prisma.avanceItem.findMany({
         where: { planillaId: base.id, itemId: { not: null } },
@@ -83,6 +84,7 @@ export class CatalogController {
               planillaId: base.id, itemId: item.id,
               descripcion: item.descripcion, unidad: item.unidad,
               precioUnitario: item.precioUnitario, cantidadContrato: item.cantidadContrato,
+              rubroCodigo: item.rubro.codigo, rubroNombre: item.rubro.nombre,
               cantidad: 0, monto: 0, avancePct: 0,
             },
           });

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import LlenadoAsistido from './LlenadoAsistido';
 import { mergeParsed } from '@/lib/proyecto-parser';
 import { provincias, municipios } from '@/lib/municipios';
+import { reverseNominatim } from '@/lib/osm-services';
 import dynamic from 'next/dynamic';
 
 const MapPicker = dynamic(() => import('./MapPicker'), { ssr: false });
@@ -65,7 +66,8 @@ export default function ProyectosPage() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<{ open: boolean; edit?: Proyecto }>({ open: false });
   const [form, setForm] = useState({ ...INIT_FORM });
-  const [ubicacionTipo, setUbicacionTipo] = useState<'calles' | 'coordenadas'>('calles');
+  const formRef = useRef(form);
+  useEffect(() => { formRef.current = form; }, [form]);
 
   const isAdmin = user?.role === 'admin';
   const isOper = user?.role === 'admin' || user?.role === 'operador';
@@ -98,29 +100,27 @@ export default function ProyectosPage() {
       provincia: p.provincia || '', municipio: p.municipio || '',
       contratista: p.contratista, supervisor: p.supervisor, fiscal: p.fiscal, jefatura: p.jefatura,
     });
-    setUbicacionTipo(tieneCoords ? 'coordenadas' : 'calles');
     setModal({ open: true, edit: p });
   }
 
   async function save() {
-    const required: (keyof typeof form)[] = ['nombre', 'contratoNro', 'montoContrato', 'ordenProceder', 'fechaConclusion', 'direccion', 'contratista', 'supervisor', 'fiscal'];
+    const f = formRef.current;
+    const required: (keyof typeof f)[] = ['nombre', 'contratoNro', 'montoContrato', 'ordenProceder', 'fechaConclusion', 'direccion', 'contratista', 'supervisor', 'fiscal'];
     for (const k of required) {
-      if (!form[k] && form[k] !== 0) { alert(`Campo requerido: ${k}`); return; }
+      if (!f[k] && f[k] !== 0) { alert(`Campo requerido: ${k}`); return; }
+    }
+    if (!f.latitud || !f.longitud) {
+      alert('Debe seleccionar una ubicación en el mapa (coordenadas)');
+      return;
     }
     const body: any = {
-      ...form,
-      montoContrato: Number(form.montoContrato),
-      anticipoPct: Number(form.anticipoPct),
-      suspendidoDias: Number(form.suspendidoDias),
+      ...f,
+      montoContrato: Number(f.montoContrato),
+      anticipoPct: Number(f.anticipoPct),
+      suspendidoDias: Number(f.suspendidoDias),
+      latitud: Number(f.latitud),
+      longitud: Number(f.longitud),
     };
-    if (ubicacionTipo === 'coordenadas') {
-      body.latitud = form.latitud ? Number(form.latitud) : undefined;
-      body.longitud = form.longitud ? Number(form.longitud) : undefined;
-      body.direccion = form.direccion || '';
-    } else {
-      body.latitud = undefined;
-      body.longitud = undefined;
-    }
     const url = modal.edit ? `${API}/proyectos/${modal.edit.id}` : `${API}/proyectos`;
     const method = modal.edit ? 'PATCH' : 'POST';
     const r = await fetch(url, {
@@ -224,34 +224,37 @@ export default function ProyectosPage() {
                   <option value="JUS">JUS</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2 rounded-lg p-1" style={{ background: 'var(--color-border-light)', border: '1px solid var(--color-border)' }}>
-                <button type="button" onClick={() => setUbicacionTipo('calles')}
-                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${ubicacionTipo === 'calles' ? 'bg-white shadow-sm' : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'}`}>Calles</button>
-                <button type="button" onClick={() => setUbicacionTipo('coordenadas')}
-                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${ubicacionTipo === 'coordenadas' ? 'bg-white shadow-sm' : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'}`}>Coordenadas</button>
-              </div>
-              {ubicacionTipo === 'calles' ? (
-                <input placeholder="Calles / Ubicación del proyecto" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })} className="input" />
-              ) : (
-                <MapPicker
-                  lat={form.latitud ? parseFloat(form.latitud) : undefined}
-                  lng={form.longitud ? parseFloat(form.longitud) : undefined}
-                  onChange={(lat, lng) => setForm({ ...form, latitud: String(lat), longitud: String(lng) })}
-                  onReverseGeocode={(dir) => setForm({ ...form, direccion: dir })}
-                />
-              )}
               <div className="grid grid-cols-2 gap-3">
-                <select value={form.provincia} onChange={e => setForm({ ...form, provincia: e.target.value, municipio: '' })} className="input">
+                <select value={form.provincia} onChange={e => setForm({ ...form, provincia: e.target.value, municipio: '', latitud: '', longitud: '', direccion: '' })} className="input">
                   <option value="">Seleccionar provincia</option>
                   {provincias.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
-                <select value={form.municipio} onChange={e => setForm({ ...form, municipio: e.target.value })} className="input">
+                <select value={form.municipio} onChange={e => {
+                  const m = municipios.find(m => m.nombre === e.target.value);
+                  setForm(prev => ({
+                    ...prev,
+                    municipio: e.target.value,
+                    latitud: m ? String(m.coords[0]) : prev.latitud,
+                    longitud: m ? String(m.coords[1]) : prev.longitud,
+                  }));
+                  if (m) {
+                    reverseNominatim(m.coords[0], m.coords[1]).then(dir => {
+                      if (dir) setForm(prev => ({ ...prev, direccion: dir }));
+                    });
+                  }
+                }} className="input">
                   <option value="">Seleccionar municipio</option>
                   {municipios.filter((m) => !form.provincia || m.provincia === form.provincia).map((m) => (
                     <option key={m.id} value={m.nombre}>{m.nombre}</option>
                   ))}
                 </select>
               </div>
+              <MapPicker
+                lat={form.latitud ? parseFloat(form.latitud) : undefined}
+                lng={form.longitud ? parseFloat(form.longitud) : undefined}
+                onChange={(lat, lng) => setForm(prev => ({ ...prev, latitud: String(lat), longitud: String(lng) }))}
+                onReverseGeocode={(dir) => setForm(prev => ({ ...prev, direccion: dir }))}
+              />
               <input placeholder="Contratista" value={form.contratista} onChange={e => setForm({ ...form, contratista: e.target.value })} className="input" />
               <div className="grid grid-cols-2 gap-3">
                 <input placeholder="Supervisor" value={form.supervisor} onChange={e => setForm({ ...form, supervisor: e.target.value })} className="input" />

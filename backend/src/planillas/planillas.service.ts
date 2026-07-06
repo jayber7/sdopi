@@ -101,6 +101,7 @@ export class PlanillasService {
 
         const items = await tx.item.findMany({
           where: { rubro: { proyectoId: data.proyectoId } },
+          include: { rubro: true },
           orderBy: { numero: 'asc' },
         });
 
@@ -119,6 +120,7 @@ export class PlanillasService {
                 unidad: i.unidad,
                 precioUnitario: i.precioUnitario,
                 cantidadContrato: i.cantidadContrato,
+                rubroCodigo: i.rubro.codigo, rubroNombre: i.rubro.nombre,
                 cantidad: 0, monto: 0, avancePct: 0,
               })),
             },
@@ -347,6 +349,16 @@ export class PlanillasService {
     for (const av of existingAvances) {
       if (!itemIds.has(av.itemId!)) {
         await this.prisma.avanceItem.delete({ where: { id: av.id } });
+      }
+    }
+
+    for (const item of items) {
+      const existing = existingByItemId.get(item.id);
+      if (existing && (!existing.rubroCodigo || !existing.rubroNombre)) {
+        await this.prisma.avanceItem.update({
+          where: { id: existing.id },
+          data: { rubroCodigo: item.rubro.codigo, rubroNombre: item.rubro.nombre },
+        });
       }
     }
 
