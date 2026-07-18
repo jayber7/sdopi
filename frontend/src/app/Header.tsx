@@ -2,7 +2,8 @@
 
 import { useAuth } from './context/AuthContext';
 import { can, hasAny } from '@/lib/permissions';
-import { useThemeToggle } from '@/context/ThemeToggleContext';
+import { useJefatura, type Jefatura } from '@/context/JefaturaContext';
+import { useTheme, alpha } from '@mui/material/styles';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -13,7 +14,6 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Divider from '@mui/material/Divider';
 import Avatar from '@mui/material/Avatar';
-import Tooltip from '@mui/material/Tooltip';
 import HomeIcon from '@mui/icons-material/Home';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import PeopleIcon from '@mui/icons-material/People';
@@ -21,19 +21,27 @@ import SecurityIcon from '@mui/icons-material/Security';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
-import PaletteIcon from '@mui/icons-material/Palette';
 import { useState } from 'react';
+
+const JEFATURA_LABEL: Record<Jefatura, string> = {
+  DI: 'Infraestructura',
+  UDETRA: 'Transporte',
+  UEH: 'Energía',
+  UPRADE: 'Prevención',
+  UNASVI: 'Saneamiento',
+};
+
+const JEFATURAS: Jefatura[] = ['DI', 'UDETRA', 'UEH', 'UPRADE', 'UNASVI'];
 
 export default function Header() {
   const { user, loading, logout } = useAuth();
-  const { mode, toggle } = useThemeToggle();
+  const { jefatura: jefaturaActual, setJefatura } = useJefatura();
+  const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const hasAdminAccess = user && hasAny(user, 'usuarios:read', 'roles:read', 'catalogo:read');
 
-  const gradientBar = mode === 'burgundy'
-    ? 'linear-gradient(90deg, #960023, #c9a84c, #c03050)'
-    : 'linear-gradient(90deg, #5b9aff, #00dbb4, #ffb300)';
+  const gradientBar = `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main}, ${theme.palette.primary.light})`;
 
   return (
     <>
@@ -51,13 +59,45 @@ export default function Header() {
               <Typography variant="body1" component="div" sx={{ fontWeight: 600, lineHeight: 1.2, fontSize: { xs: '0.8rem', md: '0.875rem' }, color: 'rgba(255,255,255,0.92)' }}>
                 Gobierno Autónomo
               </Typography>
-              <Typography variant="body2" component="div" sx={{ lineHeight: 1.2, fontSize: { xs: '0.7rem', md: '0.8rem' }, color: 'rgba(150,200,255,0.65)' }}>
+              <Typography variant="body2" component="div" sx={{ lineHeight: 1.2, fontSize: { xs: '0.7rem', md: '0.8rem' }, color: alpha(theme.palette.text.secondary, 0.65) }}>
                 Departamento de Oruro
               </Typography>
-              <Typography variant="caption" component="div" sx={{ lineHeight: 1.2, fontSize: { xs: '0.6rem', md: '0.7rem' }, color: 'rgba(150,200,255,0.45)' }}>
+              <Typography variant="caption" component="div" sx={{ lineHeight: 1.2, fontSize: { xs: '0.6rem', md: '0.7rem' }, color: alpha(theme.palette.text.secondary, 0.45) }}>
                 Secretaría Departamental de Obras Públicas
               </Typography>
             </Box>
+          </Box>
+
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }}>
+            {JEFATURAS.map((j) => {
+              const active = j === jefaturaActual;
+              return (
+                <Button
+                  key={j}
+                  onClick={() => setJefatura(j)}
+                  size="small"
+                  sx={{
+                    fontSize: '0.7rem',
+                    fontWeight: active ? 700 : 500,
+                    px: 1,
+                    py: 0.25,
+                    minWidth: 0,
+                    borderRadius: 1,
+                    color: active ? alpha(theme.palette.primary.light, 0.95) : alpha(theme.palette.text.secondary, 0.4),
+                    background: active ? alpha(theme.palette.primary.main, 0.15) : 'transparent',
+                    border: active ? `1px solid ${alpha(theme.palette.primary.main, 0.25)}` : '1px solid transparent',
+                    textTransform: 'none',
+                    transition: 'all 0.12s ease',
+                    '&:hover': active ? {} : {
+                      color: alpha(theme.palette.text.secondary, 0.7),
+                      background: alpha(theme.palette.primary.main, 0.05),
+                    },
+                  }}
+                >
+                  {JEFATURA_LABEL[j]}
+                </Button>
+              );
+            })}
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, md: 1.5 } }}>
@@ -65,7 +105,7 @@ export default function Header() {
               component="a"
               href="/"
               startIcon={<HomeIcon />}
-              sx={{ color: 'rgba(150,200,255,0.6)', '&:hover': { color: 'rgba(150,220,255,0.95)' }, fontSize: { xs: '0.7rem', md: '0.8125rem' }, minWidth: 0 }}
+              sx={{ color: alpha(theme.palette.text.secondary, 0.6), '&:hover': { color: alpha(theme.palette.primary.light, 0.95) }, fontSize: { xs: '0.7rem', md: '0.8125rem' }, minWidth: 0 }}
             >
               Inicio
             </Button>
@@ -73,15 +113,10 @@ export default function Header() {
               component="a"
               href="/proyectos"
               startIcon={<InventoryIcon />}
-              sx={{ color: 'rgba(150,200,255,0.6)', '&:hover': { color: 'rgba(150,220,255,0.95)' }, fontSize: { xs: '0.7rem', md: '0.8125rem' }, minWidth: 0 }}
+              sx={{ color: alpha(theme.palette.text.secondary, 0.6), '&:hover': { color: alpha(theme.palette.primary.light, 0.95) }, fontSize: { xs: '0.7rem', md: '0.8125rem' }, minWidth: 0 }}
             >
               Proyectos
             </Button>
-            <Tooltip title={mode === 'burgundy' ? 'Tema por defecto' : 'Tema burdeo'}>
-              <IconButton onClick={toggle} size="small" sx={{ color: 'rgba(150,200,255,0.4)', '&:hover': { color: 'rgba(150,220,255,0.8)' } }}>
-                <PaletteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
             {!loading && user && (
               <>
                 <IconButton
@@ -89,7 +124,7 @@ export default function Header() {
                   size="small"
                   sx={{ ml: 0.5 }}
                 >
-                  <Avatar sx={{ width: 30, height: 30, bgcolor: 'rgba(91,154,255,0.3)', color: 'rgba(150,220,255,0.9)', fontSize: '0.75rem', fontWeight: 600 }}>
+                  <Avatar sx={{ width: 30, height: 30, bgcolor: alpha(theme.palette.primary.main, 0.3), color: alpha(theme.palette.primary.light, 0.9), fontSize: '0.75rem', fontWeight: 600 }}>
                     {user.nombre.charAt(0).toUpperCase()}
                   </Avatar>
                 </IconButton>
@@ -140,7 +175,7 @@ export default function Header() {
                 startIcon={<LoginIcon />}
                 variant="outlined"
                 size="small"
-                sx={{ borderColor: 'rgba(91,154,255,0.3)', color: 'rgba(150,200,255,0.7)', '&:hover': { borderColor: 'rgba(91,154,255,0.6)' } }}
+                sx={{ borderColor: alpha(theme.palette.primary.main, 0.3), color: alpha(theme.palette.text.secondary, 0.7), '&:hover': { borderColor: alpha(theme.palette.primary.main, 0.6) } }}
               >
                 Ingresar
               </Button>

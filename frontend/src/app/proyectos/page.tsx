@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 import { can } from '@/lib/permissions';
+import { useJefatura } from '@/context/JefaturaContext';
 import LlenadoAsistido from './LlenadoAsistido';
 import { mergeParsed } from '@/lib/proyecto-parser';
 import { provincias, municipios } from '@/lib/municipios';
@@ -82,6 +83,7 @@ const ETAPA_COLOR: Record<string, 'default' | 'primary' | 'secondary' | 'error' 
 
 export default function ProyectosPage() {
   const { user } = useAuth();
+  const { jefatura: jefaturaActual } = useJefatura();
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'card' | 'list'>('card');
@@ -101,18 +103,18 @@ export default function ProyectosPage() {
   useEffect(() => {
     const ac = new AbortController();
     setLoading(true);
-    fetch(`${API}/proyectos`, { credentials: 'include', signal: ac.signal })
+    fetch(`${API}/proyectos?jefatura=${jefaturaActual}`, { credentials: 'include', signal: ac.signal })
       .then(r => r.ok ? r.json() : [])
       .then(setProyectos)
       .catch(() => {})
       .finally(() => setLoading(false));
     return () => ac.abort();
-  }, []);
+  }, [jefaturaActual]);
 
   async function loadProyectos() {
     setLoading(true);
     try {
-      const r = await fetch(`${API}/proyectos`, { credentials: 'include' });
+      const r = await fetch(`${API}/proyectos?jefatura=${jefaturaActual}`, { credentials: 'include' });
       setProyectos(r.ok ? await r.json() : []);
     } finally { setLoading(false); }
   }

@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ProyectosService } from './proyectos.service';
+import { Jefatura } from '@prisma/client';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('proyectos')
@@ -10,8 +11,8 @@ export class ProyectosController {
   constructor(private service: ProyectosService) {}
 
   @Get()
-  findAll(@Query('municipio') municipio?: string, @Query('provincia') provincia?: string) {
-    return this.service.findAll(municipio, provincia);
+  findAll(@Query('municipio') municipio?: string, @Query('provincia') provincia?: string, @Query('jefatura') jefatura?: Jefatura) {
+    return this.service.findAll(municipio, provincia, jefatura);
   }
 
   @Get(':id')

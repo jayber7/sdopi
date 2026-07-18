@@ -1,16 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Jefatura } from '@prisma/client';
 
 @Injectable()
 export class ProyectosService {
   constructor(private prisma: PrismaService) {}
 
-  findAll(municipio?: string, provincia?: string) {
+  findAll(municipio?: string, provincia?: string, jefatura?: Jefatura) {
     return this.prisma.proyecto.findMany({
       where: {
         activo: true,
         ...(municipio && { municipio }),
         ...(provincia && { provincia }),
+        ...(jefatura && { jefatura }),
       },
       include: {
         rubros: {

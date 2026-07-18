@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { type Municipio } from '@/lib/municipios';
+import { useJefatura } from '@/context/JefaturaContext';
 import { useTheme, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -24,21 +25,20 @@ interface Proyecto {
 
 export default function ProjectList({ selected }: Props) {
   const theme = useTheme();
+  const { jefatura: jefaturaActual } = useJefatura();
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const ac = new AbortController();
-    const params = new URLSearchParams();
-    params.set('municipio', selected.nombre);
     setLoading(true);
-    fetch(`/api/proyectos?${params}`, { signal: ac.signal })
+    fetch(`/api/proyectos?municipio=${encodeURIComponent(selected.nombre)}&jefatura=${jefaturaActual}`, { signal: ac.signal })
       .then((r) => r.json())
       .then((data) => setProyectos(Array.isArray(data) ? data : []))
       .catch(() => setProyectos([]))
       .finally(() => setLoading(false));
     return () => ac.abort();
-  }, [selected.id]);
+  }, [selected.id, jefaturaActual]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, background: theme.palette.background.paper, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`, borderRadius: 2, boxShadow: '0 4px 24px rgba(0,0,0,0.25)' }}>
