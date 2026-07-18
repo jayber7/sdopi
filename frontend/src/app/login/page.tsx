@@ -3,6 +3,14 @@
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import ConstructionIcon from '@mui/icons-material/Construction';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -23,24 +31,44 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto mt-16 max-w-sm animate-fade-in">
-      <div className="card">
-        <div className="card-header">
-          <h3>Iniciar Sesión</h3>
-        </div>
-        <form onSubmit={handleSubmit} className="card-body space-y-4">
-          {error && <div className="banner banner-error">{error}</div>}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--color-ink-muted)' }}>Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--color-ink-muted)' }}>Contraseña</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="input" required />
-          </div>
-          <button type="submit" className="btn btn-primary w-full justify-center">Ingresar</button>
-        </form>
-      </div>
-    </div>
+    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 12, animation: 'fadeIn 0.3s ease both' }}>
+      <Card sx={{ maxWidth: 420, width: '100%', mx: 2 }}>
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <ConstructionIcon sx={{ fontSize: 40, color: 'rgba(100,200,255,0.5)', mb: 1 }} />
+            <Typography variant="h5" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontWeight: 400 }}>
+              Iniciar Sesión
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 0.5, color: 'rgba(150,200,255,0.5)' }}>
+              Sistema de Certificados de Avance de Obra
+            </Typography>
+          </Box>
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            {error && <Alert severity="error" variant="standard">{error}</Alert>}
+            <TextField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              fullWidth
+              size="small"
+            />
+            <TextField
+              label="Contraseña"
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              fullWidth
+              size="small"
+            />
+            <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 1 }}>
+              Ingresar
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

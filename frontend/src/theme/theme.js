@@ -1,3 +1,4 @@
+'use client';
 import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
@@ -33,7 +34,7 @@ const theme = createTheme({
     error: { main: '#ff6b6b', light: 'rgba(255,80,80,0.15)' },
   },
   typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Sora", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h4: { fontWeight: 700, color: 'rgba(255,255,255,0.92)' },
     h5: { fontWeight: 600, color: 'rgba(255,255,255,0.92)' },
     h6: { fontWeight: 600, color: 'rgba(255,255,255,0.92)' },
@@ -64,16 +65,6 @@ const theme = createTheme({
           WebkitBackdropFilter: 'blur(12px)',
           borderBottom: '1px solid rgba(100,180,255,0.1)',
           boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
-        },
-      },
-    },
-    MuiDrawer: {
-      styleOverrides: {
-        paper: {
-          background: 'linear-gradient(180deg, rgba(10,14,39,0.95) 0%, rgba(15,10,35,0.95) 100%)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderRight: '1px solid rgba(100,180,255,0.06)',
         },
       },
     },
@@ -139,6 +130,12 @@ const theme = createTheme({
           '&:hover': {
             borderColor: 'rgba(255,255,255,0.3)',
             background: 'rgba(255,255,255,0.05)',
+          },
+        },
+        text: {
+          color: 'rgba(150,200,255,0.7)',
+          '&:hover': {
+            background: 'rgba(100,180,255,0.08)',
           },
         },
       },
@@ -333,6 +330,23 @@ const theme = createTheme({
       styleOverrides: {
         indicator: {
           background: 'linear-gradient(90deg, #5b9aff, #00dbb4)',
+        },
+      },
+    },
+    MuiSelect: {
+      styleOverrides: {
+        root: {
+          color: 'rgba(255,255,255,0.85)',
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderRadius: 8,
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'rgba(100,180,255,0.3) !important',
+          },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'rgba(100,180,255,0.5) !important',
+          },
         },
       },
     },

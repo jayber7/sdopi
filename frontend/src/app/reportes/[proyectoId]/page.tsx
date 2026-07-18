@@ -3,9 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const API = '/api';
 const fmt = (n: number) => n.toLocaleString('es-BO', { minimumFractionDigits: 2 });
@@ -20,24 +28,15 @@ interface AnalisisRow {
   avanceFisico: number; avanceFinanciero: number;
 }
 interface CertificadoData {
-  ejecutadoAcumuladoAnterior: number;
-  ejecutadoPresentePeriodo: number;
-  ejecutadoAcumuladoALaFecha: number;
-  descuentoAnticipoAcumuladoAnterior: number;
-  interesSegunContrato: number;
-  descuentoAnticipoPresentePeriodo: number;
-  descuentoAnticipoAcumuladoALaFecha: number;
-  multaAnterior: number;
-  multaPresentePeriodo: number;
-  multaAcumuladoALaFecha: number;
-  totalDeducciones: number;
-  liquidoPagadoAcumuladoAnterior: number;
-  liquidoPagadoAcumuladoALaFecha: number;
-  liquidoPagablePlanillaActual: number;
-  totalLiquidoPagadoAcumuladoALaFecha: number;
-  montoAcumuladoCaosALaFecha: number;
-  saldoPorRestituirAnticipo: number;
-  saldoEfectivoPorPagar: number;
+  ejecutadoAcumuladoAnterior: number; ejecutadoPresentePeriodo: number;
+  ejecutadoAcumuladoALaFecha: number; descuentoAnticipoAcumuladoAnterior: number;
+  interesSegunContrato: number; descuentoAnticipoPresentePeriodo: number;
+  descuentoAnticipoAcumuladoALaFecha: number; multaAnterior: number;
+  multaPresentePeriodo: number; multaAcumuladoALaFecha: number;
+  totalDeducciones: number; liquidoPagadoAcumuladoAnterior: number;
+  liquidoPagadoAcumuladoALaFecha: number; liquidoPagablePlanillaActual: number;
+  totalLiquidoPagadoAcumuladoALaFecha: number; montoAcumuladoCaosALaFecha: number;
+  saldoPorRestituirAnticipo: number; saldoEfectivoPorPagar: number;
 }
 interface AnalisisData {
   proyecto: any; tablaFinanciera: AnalisisRow[]; totales: any;
@@ -56,9 +55,11 @@ interface PlanillaRubroGroup {
 }
 interface PlanillaData { proyecto: any; rubros: PlanillaRubroGroup[]; }
 
+const th = { background: 'rgba(255,255,255,0.03)', color: 'rgba(150,200,255,0.7)', fontSize: '0.7rem', textTransform: 'uppercase' as const, letterSpacing: '0.05em', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 12px', whiteSpace: 'nowrap' as const };
+const td = { padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.75)', verticalAlign: 'middle' as const };
+
 export default function ReportesPage() {
   const params = useParams();
-  const { user } = useAuth();
   const [tab, setTab] = useState<'analisis' | 'planillas' | 'certificado'>('analisis');
   const [analisis, setAnalisis] = useState<AnalisisData | null>(null);
   const [planillas, setPlanillas] = useState<PlanillaData | null>(null);
@@ -68,9 +69,7 @@ export default function ReportesPage() {
   const [totalCaos, setTotalCaos] = useState(0);
   const [searchParams, setSearchParams] = useState<URLSearchParams | null>(null);
 
-  useEffect(() => {
-    setSearchParams(new URLSearchParams(window.location.search));
-  }, []);
+  useEffect(() => { setSearchParams(new URLSearchParams(window.location.search)); }, []);
 
   useEffect(() => {
     const id = params?.proyectoId;
@@ -88,8 +87,7 @@ export default function ReportesPage() {
       fetch(`${API}/reportes/analisis-cao/${id}${qs}`, { credentials: 'include' }).then(r => r.ok ? r.json() : null),
       fetch(`${API}/reportes/planillas/${id}${qs}`, { credentials: 'include' }).then(r => r.ok ? r.json() : null),
     ]).then(([a, p]) => {
-      setAnalisis(a);
-      setPlanillas(p);
+      setAnalisis(a); setPlanillas(p);
       setProyectoNombre(a?.proyecto?.nombre || p?.proyecto?.nombre || '');
       setTotalCaos(a?.totalCaos || p?.totalCaos || 0);
     }).finally(() => setLoading(false));
@@ -102,188 +100,167 @@ export default function ReportesPage() {
     setHastaCao(n);
   }
 
-  if (loading) return <div className="page-full animate-fade-in" style={{ color: 'var(--color-ink-muted)' }}>Cargando reportes...</div>;
+  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}><CircularProgress size={32} sx={{ color: 'rgba(100,180,255,0.5)' }} /></Box>;
 
   return (
-    <div className="page-full animate-fade-in">
-      <div className="card mb-4">
-        <div className="card-body flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold">
-              Reportes {hastaCao ? `— hasta CAO N°${hastaCao}` : ''}
-            </h1>
-            <p className="text-sm" style={{ color: 'var(--color-ink-muted)' }}>{proyectoNombre}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <label className="text-xs" style={{ color: 'var(--color-ink-muted)' }}>Mostrar hasta CAO:</label>
-              <select
-                className="select select-sm"
-                value={hastaCao ?? totalCaos}
-                onChange={e => cambiarHastaCao(Number(e.target.value))}
-              >
-                <option value={totalCaos}>Todas ({totalCaos})</option>
-                {Array.from({ length: totalCaos }, (_, i) => i + 1).map(n => (
-                  <option key={n} value={n}>CAO N°{n}</option>
-                ))}
-              </select>
-            </div>
-            <button onClick={() => setTab('analisis')} className={`btn btn-sm ${tab === 'analisis' ? 'btn-primary' : 'btn-outline'}`}>Análisis CAO</button>
-            <button onClick={() => setTab('certificado')} className={`btn btn-sm ${tab === 'certificado' ? 'btn-primary' : 'btn-outline'}`}>Certificado</button>
-            <button onClick={() => setTab('planillas')} className={`btn btn-sm ${tab === 'planillas' ? 'btn-primary' : 'btn-outline'}`}>Detalle de Planillas</button>
-            <button onClick={() => window.print()} className="btn btn-outline btn-sm">🖨 Imprimir</button>
-          </div>
-        </div>
-      </div>
+    <Box sx={{ maxWidth: 1280, mx: 'auto', animation: 'fadeIn 0.3s ease both' }}>
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+            <Box>
+              <Typography variant="h4" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontWeight: 400, fontSize: '1.25rem' }}>
+                Reportes {hastaCao ? `— hasta CAO N°${hastaCao}` : ''}
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(150,200,255,0.5)' }}>{proyectoNombre}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+              <TextField select label="Mostrar hasta" value={hastaCao ?? totalCaos} onChange={e => cambiarHastaCao(Number(e.target.value))} size="small" sx={{ minWidth: 130 }}>
+                <MenuItem value={totalCaos}>Todas ({totalCaos})</MenuItem>
+                {Array.from({ length: totalCaos }, (_, i) => i + 1).map(n => <MenuItem key={n} value={n}>CAO N°{n}</MenuItem>)}
+              </TextField>
+              <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ '& .MuiTab-root': { minWidth: 80, fontSize: '0.75rem', p: 1 } }}>
+                <Tab label="Análisis" value="analisis" />
+                <Tab label="Certificado" value="certificado" />
+                <Tab label="Planillas" value="planillas" />
+              </Tabs>
+              <Button variant="outlined" size="small" onClick={() => window.print()}>🖨 Imprimir</Button>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
 
       {tab === 'analisis' && analisis && <AnalisisReport data={analisis} />}
       {tab === 'certificado' && analisis?.certificado && <CertificadoReport data={analisis} />}
       {tab === 'planillas' && planillas && <PlanillaReport data={planillas} />}
-    </div>
+    </Box>
   );
 }
 
 function AnalisisReport({ data }: { data: AnalisisData }) {
   const p = data.proyecto;
   return (
-    <div className="space-y-4 report-print">
-      {/* Project header */}
-      <div className="card">
-        <div className="card-body text-sm space-y-1">
-          <p><strong>PROYECTO:</strong> {p.nombre}</p>
-          <p><strong>CONTRATO N°:</strong> {p.contratoNro}</p>
-          <p><strong>CONTRATISTA:</strong> {p.contratista}</p>
-          <p><strong>SUPERVISIÓN:</strong> {p.supervisor} &nbsp;|&nbsp; <strong>FISCALIZACIÓN:</strong> {p.fiscal}</p>
-          <p><strong>MONTO CONTRATO:</strong> Bs {fmt(p.montoContrato)}</p>
-          <p><strong>ANTICIPO:</strong> {data.anticipo.porcentaje}% — Bs {fmt(data.anticipo.monto)}</p>
-          <p><strong>ORDEN DE PROCEDER:</strong> {fdate(p.ordenProceder)} &nbsp;|&nbsp; <strong>FECHA CONCLUSIÓN:</strong> {fdate(p.fechaConclusion)}</p>
-        </div>
-      </div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Card><CardContent sx={{ fontSize: '0.875rem', display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Typography variant="body2"><strong>PROYECTO:</strong> {p.nombre}</Typography>
+        <Typography variant="body2"><strong>CONTRATO N°:</strong> {p.contratoNro}</Typography>
+        <Typography variant="body2"><strong>CONTRATISTA:</strong> {p.contratista}</Typography>
+        <Typography variant="body2"><strong>SUPERVISIÓN:</strong> {p.supervisor} &nbsp;|&nbsp; <strong>FISCALIZACIÓN:</strong> {p.fiscal}</Typography>
+        <Typography variant="body2"><strong>MONTO CONTRATO:</strong> Bs {fmt(p.montoContrato)}</Typography>
+        <Typography variant="body2"><strong>ANTICIPO:</strong> {data.anticipo.porcentaje}% — Bs {fmt(data.anticipo.monto)}</Typography>
+        <Typography variant="body2"><strong>ORDEN DE PROCEDER:</strong> {fdate(p.ordenProceder)} &nbsp;|&nbsp; <strong>FECHA CONCLUSIÓN:</strong> {fdate(p.fechaConclusion)}</Typography>
+      </CardContent></Card>
 
-      {/* Desglose contractual */}
-      <div className="card">
-        <div className="card-header"><h3>Desglose Contractual</h3></div>
-        <div className="card-body text-sm grid grid-cols-2 gap-2">
-          <p><strong>MONTO CONTRATO:</strong> Bs {fmt(data.desgloseContractual.montoContrato)}</p>
-          <p><strong>ANTICIPO:</strong> Bs {fmt(data.desgloseContractual.anticipo)}</p>
-          <p><strong>ORDEN DE TRABAJO N° 1:</strong> {data.desgloseContractual.ordenTrabajoMonto ? 'Bs ' + fmt(data.desgloseContractual.ordenTrabajoMonto) : '—'}</p>
-          <p><strong>ORDEN DE CAMBIO N° 1:</strong> {data.desgloseContractual.ordenCambioMonto ? 'Bs ' + fmt(data.desgloseContractual.ordenCambioMonto) : '—'}</p>
-        </div>
-      </div>
+      <Card>
+        <CardContent>
+          <Typography variant="h6" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', mb: 1, fontSize: '0.9375rem' }}>Desglose Contractual</Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, fontSize: '0.875rem' }}>
+            <Typography variant="body2"><strong>MONTO CONTRATO:</strong> Bs {fmt(data.desgloseContractual.montoContrato)}</Typography>
+            <Typography variant="body2"><strong>ANTICIPO:</strong> Bs {fmt(data.desgloseContractual.anticipo)}</Typography>
+            <Typography variant="body2"><strong>ORDEN DE TRABAJO N° 1:</strong> {data.desgloseContractual.ordenTrabajoMonto ? 'Bs ' + fmt(data.desgloseContractual.ordenTrabajoMonto) : '—'}</Typography>
+            <Typography variant="body2"><strong>ORDEN DE CAMBIO N° 1:</strong> {data.desgloseContractual.ordenCambioMonto ? 'Bs ' + fmt(data.desgloseContractual.ordenCambioMonto) : '—'}</Typography>
+          </Box>
+        </CardContent>
+      </Card>
 
-      {/* Financial table */}
-      <div className="card">
-        <div className="card-header"><h3>Reporte Financiero</h3></div>
-        <div className="table-wrap" style={{ border: 'none', borderRadius: 0 }}>
-          <table>
-            <thead>
-              <tr>
-                <th>CAO</th>
-                <th>Período</th>
-                <th className="text-right">Desembolso Efectuado (Bs)</th>
-                <th className="text-right">Desc. Anticipo (Bs)</th>
-                <th className="text-right">Líquido Pagado (Bs)</th>
-                <th className="text-right">Saldo por Ejecutar (Bs)</th>
-                <th className="text-right">Avance Físico [%]</th>
-                <th className="text-right">Avance Financiero [%]</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.tablaFinanciera.map((r) => (
-                <tr key={r.numero}>
-                  <td>{r.numero === 0 ? 'ANTICIPO' : `CAO N° ${r.numero}`}</td>
-                  <td>{r.periodo || `${fdate(r.fechaInicio)} — ${fdate(r.fechaFin)}`}</td>
-                  <td className="text-right">{fmt(r.desembolsoEfectuado)}</td>
-                  <td className="text-right">{fmt(r.descuentoAnticipo)}</td>
-                  <td className="text-right">{fmt(r.liquidoPagado)}</td>
-                  <td className="text-right">{fmt(r.saldoPorEjecutar)}</td>
-                  <td className="text-right">{pct(r.avanceFisico)}</td>
-                  <td className="text-right">{pct(r.avanceFinanciero)}</td>
+      <Card>
+        <CardContent>
+          <Typography variant="h6" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', mb: 1, fontSize: '0.9375rem' }}>Reporte Financiero</Typography>
+          <Box sx={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+              <thead>
+                <tr>
+                  <th style={th}>CAO</th>
+                  <th style={th}>Período</th>
+                  <th style={{ ...th, textAlign: 'right' }}>Desembolso Efectuado (Bs)</th>
+                  <th style={{ ...th, textAlign: 'right' }}>Desc. Anticipo (Bs)</th>
+                  <th style={{ ...th, textAlign: 'right' }}>Líquido Pagado (Bs)</th>
+                  <th style={{ ...th, textAlign: 'right' }}>Saldo por Ejecutar (Bs)</th>
+                  <th style={{ ...th, textAlign: 'right' }}>Avance Físico [%]</th>
+                  <th style={{ ...th, textAlign: 'right' }}>Avance Financiero [%]</th>
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr style={{ fontWeight: 600 }}>
-                <td colSpan={2}>TOTALES</td>
-                <td className="text-right">{fmt(data.totales.desembolsoEfectuado)}</td>
-                <td className="text-right">{fmt(data.totales.descuentoAnticipo)}</td>
-                <td className="text-right">{fmt(data.totales.liquidoPagado)}</td>
-                <td className="text-right">{fmt(data.totales.saldoPorEjecutar)}</td>
-                <td className="text-right">{pct(data.totales.avanceFisico)}</td>
-                <td className="text-right">{pct(data.totales.avanceFinanciero)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {data.tablaFinanciera.map((r) => (
+                  <tr key={r.numero}>
+                    <td style={td}>{r.numero === 0 ? 'ANTICIPO' : `CAO N° ${r.numero}`}</td>
+                    <td style={td}>{r.periodo || `${fdate(r.fechaInicio)} — ${fdate(r.fechaFin)}`}</td>
+                    <td style={{ ...td, textAlign: 'right' }}>{fmt(r.desembolsoEfectuado)}</td>
+                    <td style={{ ...td, textAlign: 'right' }}>{fmt(r.descuentoAnticipo)}</td>
+                    <td style={{ ...td, textAlign: 'right' }}>{fmt(r.liquidoPagado)}</td>
+                    <td style={{ ...td, textAlign: 'right' }}>{fmt(r.saldoPorEjecutar)}</td>
+                    <td style={{ ...td, textAlign: 'right' }}>{pct(r.avanceFisico)}</td>
+                    <td style={{ ...td, textAlign: 'right' }}>{pct(r.avanceFinanciero)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr style={{ fontWeight: 600 }}>
+                  <td colSpan={2} style={td}>TOTALES</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{fmt(data.totales.desembolsoEfectuado)}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{fmt(data.totales.descuentoAnticipo)}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{fmt(data.totales.liquidoPagado)}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{fmt(data.totales.saldoPorEjecutar)}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{pct(data.totales.avanceFisico)}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{pct(data.totales.avanceFinanciero)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </Box>
+        </CardContent>
+      </Card>
 
       <CurvaAvance data={data.tablaFinanciera} />
 
-      {/* Progress summary */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="card">
-          <div className="card-header"><h3>Avance Físico Total</h3></div>
-          <div className="card-body text-center">
-            <p className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>{pct(data.totales.avanceFisico)}</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--color-ink-muted)' }}>Retraso: {pct(data.retraso.fisico)}</p>
-          </div>
-        </div>
-        <div className="card">
-          <div className="card-header"><h3>Avance Financiero Total</h3></div>
-          <div className="card-body text-center">
-            <p className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>{pct(data.totales.avanceFinanciero)}</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--color-ink-muted)' }}>Retraso: {pct(data.retraso.financiero)}</p>
-          </div>
-        </div>
-        <div className="card">
-          <div className="card-header"><h3>Saldo por Pagar</h3></div>
-          <div className="card-body text-center">
-            <p className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>Bs {fmt(data.totales.saldoPorEjecutar)}</p>
-          </div>
-        </div>
-      </div>
-    </div>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+        <Card><CardContent sx={{ textAlign: 'center' }}>
+          <Typography variant="h6" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontSize: '0.9375rem' }}>Avance Físico Total</Typography>
+          <Typography variant="h4" sx={{ color: 'rgba(150,200,255,0.9)', mt: 1 }}>{pct(data.totales.avanceFisico)}</Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)' }}>Retraso: {pct(data.retraso.fisico)}</Typography>
+        </CardContent></Card>
+        <Card><CardContent sx={{ textAlign: 'center' }}>
+          <Typography variant="h6" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontSize: '0.9375rem' }}>Avance Financiero Total</Typography>
+          <Typography variant="h4" sx={{ color: 'rgba(150,200,255,0.9)', mt: 1 }}>{pct(data.totales.avanceFinanciero)}</Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)' }}>Retraso: {pct(data.retraso.financiero)}</Typography>
+        </CardContent></Card>
+        <Card><CardContent sx={{ textAlign: 'center' }}>
+          <Typography variant="h6" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontSize: '0.9375rem' }}>Saldo por Pagar</Typography>
+          <Typography variant="h4" sx={{ color: 'rgba(150,200,255,0.9)', mt: 1 }}>Bs {fmt(data.totales.saldoPorEjecutar)}</Typography>
+        </CardContent></Card>
+      </Box>
+    </Box>
   );
 }
 
 function CurvaAvance({ data }: { data: AnalisisRow[] }) {
   let acFisico = 0, acFinanciero = 0;
   const chartData = data.map(r => {
-    acFisico += r.avanceFisico;
-    acFinanciero += r.avanceFinanciero;
-    return {
-      cao: r.numero === 0 ? 'ANTICIPO' : `CAO ${r.numero}`,
-      programado: data.length > 1 ? (r.numero / (data.length - 1)) * 100 : 0,
-      ejecutadoFisico: acFisico * 100,
-      ejecutadoFinanciero: acFinanciero * 100,
-    };
+    acFisico += r.avanceFisico; acFinanciero += r.avanceFinanciero;
+    return { cao: r.numero === 0 ? 'ANTICIPO' : `CAO ${r.numero}`, programado: data.length > 1 ? (r.numero / (data.length - 1)) * 100 : 0, ejecutadoFisico: acFisico * 100, ejecutadoFinanciero: acFinanciero * 100 };
   });
-  const pctLabel = (v: number) => v.toFixed(2) + '%';
 
   return (
-    <div className="card">
-      <div className="card-header"><h3>Curva de Avance — Programado vs Ejecutado</h3></div>
-      <div className="card-body">
+    <Card>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', mb: 1, fontSize: '0.9375rem' }}>Curva de Avance — Programado vs Ejecutado</Typography>
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={chartData} margin={{ top: 8, right: 32, left: 8, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-line)" />
-            <XAxis dataKey="cao" tick={{ fontSize: 12 }} stroke="var(--color-ink-muted)" />
-            <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 12 }} stroke="var(--color-ink-muted)" />
-            <Tooltip formatter={(v: any) => (typeof v === 'number' ? v.toFixed(2) + '%' : v)} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+            <XAxis dataKey="cao" tick={{ fontSize: 12, fill: 'rgba(150,200,255,0.5)' }} />
+            <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 12, fill: 'rgba(150,200,255,0.5)' }} />
+            <Tooltip contentStyle={{ background: 'rgba(10,14,39,0.95)', border: '1px solid rgba(100,180,255,0.1)', borderRadius: 8, backdropFilter: 'blur(8px)' }} formatter={(v: any) => (typeof v === 'number' ? v.toFixed(2) + '%' : v)} />
             <Legend />
             <Line dataKey="programado" stroke="#94a3b8" strokeDasharray="6 3" name="Programado" dot={false} />
-            <Line dataKey="ejecutadoFisico" stroke="#3b82f6" strokeWidth={2} name="Ejecutado Físico" dot={{ r: 4 }} />
-            <Line dataKey="ejecutadoFinanciero" stroke="#ef4444" strokeWidth={2} name="Ejecutado Financiero" dot={{ r: 4 }} />
+            <Line dataKey="ejecutadoFisico" stroke="#5b9aff" strokeWidth={2} name="Ejecutado Físico" dot={{ r: 4 }} />
+            <Line dataKey="ejecutadoFinanciero" stroke="#00dbb4" strokeWidth={2} name="Ejecutado Financiero" dot={{ r: 4 }} />
           </LineChart>
         </ResponsiveContainer>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
 function CertificadoReport({ data }: { data: AnalisisData }) {
-  const c = data.certificado!;
-  const p = data.proyecto;
+  const c = data.certificado!; const p = data.proyecto;
   const certTitle = `CERTIFICADO N° ${data.tablaFinanciera[data.tablaFinanciera.length - 1]?.numero ?? ''}`;
   const nr = (n: number) => `F-${String(n).padStart(2, '0')}`;
   type RowDef = { n: number; label: string; anterior?: number; presente?: number; acumulado?: number; pct?: boolean; bold?: boolean };
@@ -308,119 +285,100 @@ function CertificadoReport({ data }: { data: AnalisisData }) {
     { n: 18, label: 'SALDO EFECTIVO POR PAGAR', acumulado: c.saldoEfectivoPorPagar, bold: true },
   ];
   return (
-    <div className="card report-print">
-      <div className="card-header"><h3>PLANILLA DE ANÁLISIS — {certTitle}</h3></div>
-      <div className="card-body text-sm space-y-1">
-        <p><strong>PROYECTO:</strong> {p.nombre}</p>
-        <p><strong>CONTRATO N°:</strong> {p.contratoNro} &nbsp;|&nbsp; <strong>CONTRATISTA:</strong> {p.contratista}</p>
-        <p><strong>SUPERVISIÓN:</strong> {p.supervisor} &nbsp;|&nbsp; <strong>FISCALIZACIÓN:</strong> {p.fiscal}</p>
-        <p><strong>MONTO CONTRATO:</strong> Bs {fmt(p.montoContrato)} &nbsp;|&nbsp; <strong>ANTICIPO:</strong> {c.interesSegunContrato}% — Bs {fmt(p.anticipoMonto ?? 0)}</p>
-      </div>
-      <div className="table-wrap" style={{ border: 'none', borderRadius: 0 }}>
-        <table>
-          <thead>
-            <tr>
-              <th style={{ width: 40 }}>N°</th>
-              <th>Línea</th>
-              <th className="text-right">Anterior (Bs)</th>
-              <th className="text-right">Presente (Bs)</th>
-              <th className="text-right">Acumulado a la fecha (Bs)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.n} className={row.bold ? 'font-semibold' : ''}>
-                <td className="text-center">{nr(row.n)}</td>
-                <td>{row.label}</td>
-                <td className="text-right">{row.anterior !== undefined ? fmt(row.anterior) : row.pct ? c.interesSegunContrato + '%' : '—'}</td>
-                <td className="text-right">{row.presente !== undefined ? fmt(row.presente) : '—'}</td>
-                <td className="text-right">{row.acumulado !== undefined ? fmt(row.acumulado) : '—'}</td>
+    <Card>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', mb: 1, fontSize: '0.9375rem' }}>PLANILLA DE ANÁLISIS — {certTitle}</Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 2, fontSize: '0.875rem' }}>
+          <Typography variant="body2"><strong>PROYECTO:</strong> {p.nombre}</Typography>
+          <Typography variant="body2"><strong>CONTRATO N°:</strong> {p.contratoNro} &nbsp;|&nbsp; <strong>CONTRATISTA:</strong> {p.contratista}</Typography>
+          <Typography variant="body2"><strong>SUPERVISIÓN:</strong> {p.supervisor} &nbsp;|&nbsp; <strong>FISCALIZACIÓN:</strong> {p.fiscal}</Typography>
+          <Typography variant="body2"><strong>MONTO CONTRATO:</strong> Bs {fmt(p.montoContrato)} &nbsp;|&nbsp; <strong>ANTICIPO:</strong> {c.interesSegunContrato}% — Bs {fmt(p.anticipoMonto ?? 0)}</Typography>
+        </Box>
+        <Box sx={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+            <thead>
+              <tr>
+                <th style={{ ...th, width: 40 }}>N°</th>
+                <th style={th}>Línea</th>
+                <th style={{ ...th, textAlign: 'right' }}>Anterior (Bs)</th>
+                <th style={{ ...th, textAlign: 'right' }}>Presente (Bs)</th>
+                <th style={{ ...th, textAlign: 'right' }}>Acumulado a la fecha (Bs)</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.n}>
+                  <td style={{ ...td, textAlign: 'center' }}>{nr(row.n)}</td>
+                  <td style={td}>{row.label}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{row.anterior !== undefined ? fmt(row.anterior) : row.pct ? c.interesSegunContrato + '%' : '—'}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{row.presente !== undefined ? fmt(row.presente) : '—'}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{row.acumulado !== undefined ? fmt(row.acumulado) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Box>
+      </CardContent>
+    </Card>
   );
 }
 
 function PlanillaReport({ data }: { data: PlanillaData }) {
   const caos = data.rubros.length > 0 ? data.rubros[0].items[0]?.caos.map(c => c.numero) : [];
-
   return (
-    <div className="card report-print">
-      <div className="card-header">
-        <h3>Planillas de Avance de Obra — Detalle por Item</h3>
-      </div>
-      <div className="table-wrap" style={{ border: 'none', borderRadius: 0 }}>
-        <table>
-          <thead>
-            <tr>
-              <th rowSpan={2}>Item</th>
-              <th rowSpan={2}>Descripción</th>
-              <th rowSpan={2}>Und</th>
-              <th rowSpan={2} className="text-right">Precio Unit.</th>
-              <th rowSpan={2} className="text-right">Cant. Contrato</th>
-              <th rowSpan={2} className="text-right">Monto Original</th>
-              {caos.map((n) => (
-                <th key={n} colSpan={2} className="text-center">CAO N°{n}</th>
-              ))}
-              <th colSpan={2} className="text-right">Acumulado</th>
-              <th rowSpan={2} className="text-right">Monto Faltante</th>
-              <th rowSpan={2} className="text-right">% Cant.</th>
-            </tr>
-            <tr>
-              {caos.map((n) => (
-                <React.Fragment key={n}>
-                  <th className="text-right">Cant.</th>
-                  <th className="text-right">Monto</th>
+    <Card>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', mb: 1, fontSize: '0.9375rem' }}>Planillas de Avance de Obra — Detalle por Item</Typography>
+        <Box sx={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+            <thead>
+              <tr>
+                <th style={th} rowSpan={2}>Item</th>
+                <th style={th} rowSpan={2}>Descripción</th>
+                <th style={th} rowSpan={2}>Und</th>
+                <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Precio Unit.</th>
+                <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Cant. Contrato</th>
+                <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Monto Original</th>
+                {caos.map((n) => <th key={n} colSpan={2} style={{ ...th, textAlign: 'center' }}>CAO N°{n}</th>)}
+                <th colSpan={2} style={{ ...th, textAlign: 'right' }}>Acumulado</th>
+                <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Monto Faltante</th>
+                <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>% Cant.</th>
+              </tr>
+              <tr>
+                {caos.map((n) => <React.Fragment key={n}><th style={{ ...th, textAlign: 'right' }}>Cant.</th><th style={{ ...th, textAlign: 'right' }}>Monto</th></React.Fragment>)}
+                <th style={{ ...th, textAlign: 'right' }}>Cant.</th>
+                <th style={{ ...th, textAlign: 'right' }}>Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.rubros.map((rubro) => (
+                <React.Fragment key={rubro.rubroCodigo}>
+                  <tr><td colSpan={99} style={{ ...td, background: 'rgba(91,154,255,0.08)', fontWeight: 600, color: 'rgba(150,200,255,0.7)', fontSize: '0.6875rem', padding: '4px 12px' }}>{rubro.rubroCodigo} — {rubro.rubroNombre}</td></tr>
+                  {rubro.items.map((item) => (
+                    <tr key={item.numero}>
+                      <td style={td}>{item.numero}</td>
+                      <td style={td}>{item.descripcion}</td>
+                      <td style={td}>{item.unidad}</td>
+                      <td style={{ ...td, textAlign: 'right' }}>{fmt(item.precioUnitario)}</td>
+                      <td style={{ ...td, textAlign: 'right' }}>{fmt(item.cantidadContrato)}</td>
+                      <td style={{ ...td, textAlign: 'right' }}>{fmt(item.montoOriginal)}</td>
+                      {caos.map((n) => { const c = item.caos.find(c => c.numero === n); return <React.Fragment key={n}><td style={{ ...td, textAlign: 'right' }}>{c ? fmt(c.cantidad) : '—'}</td><td style={{ ...td, textAlign: 'right' }}>{c ? fmt(c.monto) : '—'}</td></React.Fragment>; })}
+                      <td style={{ ...td, textAlign: 'right' }}>{fmt(item.acumulado.cantidad)}</td>
+                      <td style={{ ...td, textAlign: 'right' }}>{fmt(item.acumulado.monto)}</td>
+                      <td style={{ ...td, textAlign: 'right' }}>{fmt(item.montoFaltante)}</td>
+                      <td style={{ ...td, textAlign: 'right' }}>{pct(item.pctCantidad)}</td>
+                    </tr>
+                  ))}
+                  <tr style={{ fontWeight: 600 }}><td colSpan={5} style={{ ...td, textAlign: 'right', background: 'rgba(91,154,255,0.08)', color: 'rgba(150,200,255,0.7)' }}>Subtotal {rubro.rubroCodigo}</td>
+                    <td style={{ ...td, textAlign: 'right', background: 'rgba(91,154,255,0.08)', color: 'rgba(150,200,255,0.7)' }}>{fmt(rubro.subtotal)}</td>
+                    <td colSpan={caos.length * 2 + 4}></td>
+                  </tr>
                 </React.Fragment>
               ))}
-              <th className="text-right">Cant.</th>
-              <th className="text-right">Monto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.rubros.map((rubro) => (
-              <React.Fragment key={rubro.rubroCodigo}>
-                <tr style={{ background: 'var(--color-primary-faint)' }}>
-                  <td colSpan={99} className="px-3 py-1.5 text-xs font-semibold" style={{ color: 'var(--color-primary-light)' }}>
-                    {rubro.rubroCodigo} — {rubro.rubroNombre}
-                  </td>
-                </tr>
-                {rubro.items.map((item) => (
-                  <tr key={item.numero}>
-                    <td>{item.numero}</td>
-                    <td>{item.descripcion}</td>
-                    <td>{item.unidad}</td>
-                    <td className="text-right">{fmt(item.precioUnitario)}</td>
-                    <td className="text-right">{fmt(item.cantidadContrato)}</td>
-                    <td className="text-right">{fmt(item.montoOriginal)}</td>
-                    {caos.map((n) => {
-                      const c = item.caos.find(c => c.numero === n);
-                      return (
-                        <React.Fragment key={n}>
-                          <td className="text-right">{c ? fmt(c.cantidad) : '—'}</td>
-                          <td className="text-right">{c ? fmt(c.monto) : '—'}</td>
-                        </React.Fragment>
-                      );
-                    })}
-                    <td className="text-right">{fmt(item.acumulado.cantidad)}</td>
-                    <td className="text-right">{fmt(item.acumulado.monto)}</td>
-                    <td className="text-right">{fmt(item.montoFaltante)}</td>
-                    <td className="text-right">{pct(item.pctCantidad)}</td>
-                  </tr>
-                ))}
-                <tr style={{ fontWeight: 600, background: 'var(--color-primary-faint)' }}>
-                  <td colSpan={5} className="text-right">Subtotal {rubro.rubroCodigo}</td>
-                  <td className="text-right">{fmt(rubro.subtotal)}</td>
-                  <td colSpan={caos.length * 2 + 4}></td>
-                </tr>
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+            </tbody>
+          </table>
+        </Box>
+      </CardContent>
+    </Card>
   );
 }
