@@ -9,7 +9,9 @@
     "contratista": "CONSORCIO ROSARIO",
     "supervisor": "SUPERVISORA CAMINOS",
     "fiscal": "DIRECCION DE INFRAESTRUCTURA",
-    "anticipoPct": 13.7747448
+    "anticipoPct": 13.7747448,
+    "latitud": -18.4861,
+    "longitud": -63.6831
   },
   "rubros": [
     {

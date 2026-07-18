@@ -6,12 +6,20 @@ export default defineConfig({
   retries: 1,
   use: {
     baseURL: 'http://localhost:3000',
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
+    trace: 'on',
+    screenshot: 'on',
+    video: {
+      mode: 'on',
+      size: { width: 1280, height: 720 },
+    },
   },
+  reporter: [
+    ['list'],
+    ['json', { outputFile: 'test-results/tutorial-steps.json' }],
+  ],
   webServer: [
     {
-      command: 'npx next start -p 3000',
+      command: 'npx next dev -p 3000',
       port: 3000,
       timeout: 30000,
       reuseExistingServer: true,

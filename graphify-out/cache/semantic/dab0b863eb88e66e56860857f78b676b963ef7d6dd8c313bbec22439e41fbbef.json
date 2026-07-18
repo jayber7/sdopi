@@ -1,0 +1,1 @@
+{"nodes": [], "edges": [{"source": "openspec_changes_archive_2026_06_25_modulo_aut_design_jwt_auth", "target": "docs_presentacion_mvp_roles", "relation": "conceptually_related_to", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "openspec/changes/archive/2026-06-25-modulo-aut/proposal.md", "source_location": "4,16", "weight": 1.0}], "hyperedges": []}

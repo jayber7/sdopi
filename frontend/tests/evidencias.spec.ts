@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import * as path from 'path';
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'test-evidence.jpg');
-const API = 'http://localhost:3001/api';
+const API = '/api';
 
 async function loginAs(page: Page, role: 'operador' | 'admin') {
   const creds = role === 'operador'

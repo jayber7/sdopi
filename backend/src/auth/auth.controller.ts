@@ -16,10 +16,11 @@ export class AuthController {
   @HttpCode(200)
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(dto.email, dto.password);
+    const isProd = process.env.NODE_ENV === 'production';
     res.cookie('auth_token', result.token, {
       httpOnly: true,
-      sameSite: 'none',
-      secure: true,
+      sameSite: isProd ? 'none' : 'lax',
+      secure: isProd,
       maxAge: 24 * 60 * 60 * 1000,
       path: '/',
     });
