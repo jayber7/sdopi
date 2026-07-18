@@ -38,16 +38,16 @@ export interface AnalisisCaoResponse {
   proyecto: {
     id: number;
     nombre: string;
-    contratoNro: string;
+    contratoNro: string | null;
     montoContrato: number;
     anticipoPct: number;
     anticipoMonto: number | null;
-    ordenProceder: string;
-    fechaConclusion: string;
-    contratista: string;
-    supervisor: string;
-    fiscal: string;
-    direccion: string;
+    ordenProceder: string | null;
+    fechaConclusion: string | null;
+    contratista: string | null;
+    supervisor: string | null;
+    fiscal: string | null;
+    direccion: string | null;
   };
   tablaFinanciera: AnalisisCaoRow[];
   totales: {
@@ -114,7 +114,7 @@ export interface PlanillaDetalleResponse {
   proyecto: {
     id: number;
     nombre: string;
-    contratoNro: string;
+    contratoNro: string | null;
   };
   totalCaos: number;
   rubros: PlanillaRubroGroup[];

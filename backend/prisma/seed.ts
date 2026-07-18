@@ -3,6 +3,44 @@ import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+// ── RBAC: Permisos y Roles por defecto ──
+const RESOURCES = ['proyectos', 'planillas', 'evidencias', 'usuarios', 'roles', 'permisos', 'reportes', 'catalogo', 'dashboard'];
+const ACTIONS = ['read', 'create', 'update', 'delete'];
+const EXTRA_ACTIONS: Record<string, string[]> = {
+  planillas: ['aprobar'],
+  evidencias: ['verificar'],
+  reportes: ['generate'],
+};
+
+const ROLE_PERMISSIONS: Record<string, { resource: string; action: string }[]> = {
+  admin: RESOURCES.flatMap(r => [...ACTIONS, ...(EXTRA_ACTIONS[r] ?? [])].map(a => ({ resource: r, action: a }))),
+  operador: [
+    { resource: 'proyectos', action: 'read' },
+    { resource: 'proyectos', action: 'create' },
+    { resource: 'proyectos', action: 'update' },
+    { resource: 'planillas', action: 'read' },
+    { resource: 'planillas', action: 'create' },
+    { resource: 'planillas', action: 'update' },
+    { resource: 'evidencias', action: 'read' },
+    { resource: 'evidencias', action: 'create' },
+    { resource: 'evidencias', action: 'update' },
+    { resource: 'reportes', action: 'read' },
+    { resource: 'catalogo', action: 'read' },
+    { resource: 'dashboard', action: 'read' },
+  ],
+  supervisor: [
+    { resource: 'proyectos', action: 'read' },
+    { resource: 'planillas', action: 'read' },
+    { resource: 'planillas', action: 'aprobar' },
+    { resource: 'evidencias', action: 'read' },
+    { resource: 'evidencias', action: 'verificar' },
+    { resource: 'reportes', action: 'read' },
+    { resource: 'reportes', action: 'generate' },
+    { resource: 'dashboard', action: 'read' },
+  ],
+  consulta: RESOURCES.flatMap(r => (r === 'roles' || r === 'permisos' ? [] : [{ resource: r, action: 'read' as const }])),
+};
+
 const PROYECTO_NOMBRE = 'MEJORAMIENTO CAMINO ROSARIO DEL INGRE - MACHICOCA';
 
 const CATALOGO_DI = [
@@ -192,10 +230,63 @@ const MULTAS = [
 ];
 
 async function main() {
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  await prisma.user.upsert({ where: { email: 'admin@cao.com' }, update: {}, create: { email: 'admin@cao.com', password: adminPassword, nombre: 'Administrador', role: 'admin' } });
-  await prisma.user.upsert({ where: { email: 'supervisor@cao.com' }, update: {}, create: { email: 'supervisor@cao.com', password: await bcrypt.hash('supervisor123', 10), nombre: 'Supervisor', role: 'supervisor' } });
-  await prisma.user.upsert({ where: { email: 'operador@cao.com' }, update: {}, create: { email: 'operador@cao.com', password: await bcrypt.hash('operador123', 10), nombre: 'Operador', role: 'operador' } });
+  // ── RBAC: Permisos por defecto ──
+  const permMap = new Map<string, number>();
+  for (const resource of RESOURCES) {
+    const actions = [...ACTIONS, ...(EXTRA_ACTIONS[resource] ?? [])];
+    for (const action of actions) {
+      const perm = await prisma.permission.upsert({
+        where: { resource_action: { resource, action } },
+        update: {},
+        create: { resource, action },
+      });
+      permMap.set(`${resource}:${action}`, perm.id);
+    }
+  }
+  console.log(`Seed: ${permMap.size} permisos creados`);
+
+  // ── RBAC: Roles por defecto ──
+  const roleMap = new Map<string, number>();
+  for (const [roleName, perms] of Object.entries(ROLE_PERMISSIONS)) {
+    const role = await prisma.role.upsert({
+      where: { name: roleName },
+      update: { description: roleName === 'admin' ? 'Acceso total al sistema' : undefined },
+      create: {
+        name: roleName,
+        description: roleName === 'admin' ? 'Acceso total al sistema'
+          : roleName === 'operador' ? 'Operaciones CRUD en proyectos, planillas y evidencias'
+          : roleName === 'supervisor' ? 'Supervisión, aprobación y verificación'
+          : 'Solo lectura en todos los módulos',
+      },
+    });
+    roleMap.set(roleName, role.id);
+
+    for (const p of perms) {
+      const permId = permMap.get(`${p.resource}:${p.action}`);
+      if (permId) {
+        await prisma.rolePermission.upsert({
+          where: { roleId_permissionId: { roleId: role.id, permissionId: permId } },
+          update: {},
+          create: { roleId: role.id, permissionId: permId },
+        });
+      }
+    }
+  }
+  console.log(`Seed: ${roleMap.size} roles creados`);
+
+  // ── Usuarios por defecto (con roleId) ──
+  const users = [
+    { email: 'admin@cao.com', password: 'admin123', nombre: 'Administrador', roleName: 'admin' },
+    { email: 'supervisor@cao.com', password: 'supervisor123', nombre: 'Supervisor', roleName: 'supervisor' },
+    { email: 'operador@cao.com', password: 'operador123', nombre: 'Operador', roleName: 'operador' },
+  ];
+  for (const u of users) {
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: { roleId: roleMap.get(u.roleName) },
+      create: { email: u.email, password: await bcrypt.hash(u.password, 10), nombre: u.nombre, role: u.roleName, roleId: roleMap.get(u.roleName) },
+    });
+  }
 
   // ── Borrar proyecto existente ──
   const existing = await prisma.proyecto.findFirst({ where: { nombre: PROYECTO_NOMBRE } });

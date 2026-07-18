@@ -108,9 +108,27 @@ export class PlanillasController {
 
   @UseGuards(RolesGuard)
   @Roles('admin')
+  @Post('sync-all-bases')
+  syncAllBases() {
+    return this.service.syncAllBases();
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @Post('cleanup-orphans')
-  cleanupOrphans() {
-    return this.service.cleanupOrphans();
+  cleanupOrphans(@Body() body?: { proyectoId?: number }) {
+    return this.service.cleanupOrphans(body?.proyectoId);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @Post('manual-cao')
+  manualCao(@Body() body: { proyectoId: number; planillaBaseId: number; numero: number; periodo: string; fechaInicio: string; fechaFin: string }) {
+    return this.service.manualCao({
+      ...body,
+      fechaInicio: new Date(body.fechaInicio),
+      fechaFin: new Date(body.fechaFin),
+    });
   }
 
   @UseGuards(RolesGuard)

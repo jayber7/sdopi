@@ -1,5 +1,6 @@
 'use client';
 
+import { useTheme, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
@@ -35,6 +36,7 @@ export default function MapControls({
   onBaseLayerChange, onPolygonsToggle, onToggleRoute,
   onCenterOruro, onFullscreen,
 }: Props) {
+  const theme = useTheme();
   return (
     <Box
       sx={{
@@ -45,24 +47,24 @@ export default function MapControls({
         py: 0.75,
         background: 'rgba(10,14,39,0.85)',
         backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(100,180,255,0.08)',
+        borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
         flexWrap: 'wrap',
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        <Button size="small" startIcon={<MyLocationIcon />} onClick={onCenterOruro} variant="text" sx={{ fontSize: '0.6875rem', color: 'rgba(150,200,255,0.6)', minWidth: 0 }}>
+        <Button size="small" startIcon={<MyLocationIcon />} onClick={onCenterOruro} variant="text" sx={{ fontSize: '0.6875rem', color: alpha(theme.palette.text.secondary, 0.6), minWidth: 0 }}>
           Centro
         </Button>
-        <Button size="small" startIcon={<RouteIcon />} onClick={onToggleRoute} variant="text" sx={{ fontSize: '0.6875rem', color: routeVisible ? 'rgba(100,200,255,0.8)' : 'rgba(150,200,255,0.6)', minWidth: 0 }}>
+        <Button size="small" startIcon={<RouteIcon />} onClick={onToggleRoute} variant="text" sx={{ fontSize: '0.6875rem', color: routeVisible ? alpha(theme.palette.primary.light, 0.8) : alpha(theme.palette.text.secondary, 0.6), minWidth: 0 }}>
           Ruta
         </Button>
-        <Button size="small" startIcon={<FullscreenIcon />} onClick={onFullscreen} variant="text" sx={{ fontSize: '0.6875rem', color: 'rgba(150,200,255,0.6)', minWidth: 0 }}>
+        <Button size="small" startIcon={<FullscreenIcon />} onClick={onFullscreen} variant="text" sx={{ fontSize: '0.6875rem', color: alpha(theme.palette.text.secondary, 0.6), minWidth: 0 }}>
           Full
         </Button>
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <MapIcon sx={{ fontSize: 14, color: 'rgba(150,200,255,0.4)' }} />
+        <MapIcon sx={{ fontSize: 14, color: alpha(theme.palette.text.secondary, 0.4) }} />
         <ToggleButtonGroup
           value={baseLayer}
           exclusive
@@ -71,7 +73,7 @@ export default function MapControls({
           sx={{
             '& .MuiToggleButton-root': {
               border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(150,200,255,0.5)',
+              color: alpha(theme.palette.text.secondary, 0.5),
               fontSize: '0.625rem',
               fontWeight: 600,
               py: 0.25,
@@ -79,12 +81,12 @@ export default function MapControls({
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
               '&.Mui-selected': {
-                background: 'rgba(91,154,255,0.2)',
-                color: 'rgba(150,220,255,0.9)',
-                borderColor: 'rgba(91,154,255,0.3)',
+                background: alpha(theme.palette.primary.main, 0.2),
+                color: alpha(theme.palette.primary.light, 0.9),
+                borderColor: alpha(theme.palette.primary.main, 0.3),
               },
               '&:hover': {
-                background: 'rgba(100,180,255,0.08)',
+                background: alpha(theme.palette.primary.main, 0.08),
               },
             },
           }}
@@ -102,13 +104,13 @@ export default function MapControls({
             onChange={onPolygonsToggle}
             size="small"
             sx={{
-              color: 'rgba(150,200,255,0.3)',
-              '&.Mui-checked': { color: 'rgba(91,154,255,0.7)' },
+              color: alpha(theme.palette.text.secondary, 0.3),
+              '&.Mui-checked': { color: alpha(theme.palette.primary.main, 0.7) },
               '& .MuiSvgIcon-root': { fontSize: 16 },
             }}
           />
         }
-        label={<Typography sx={{ fontSize: '0.6875rem', color: 'rgba(150,200,255,0.6)' }}>Polígonos</Typography>}
+        label={<Typography sx={{ fontSize: '0.6875rem', color: alpha(theme.palette.text.secondary, 0.6) }}>Polígonos</Typography>}
         sx={{ m: 0 }}
       />
     </Box>

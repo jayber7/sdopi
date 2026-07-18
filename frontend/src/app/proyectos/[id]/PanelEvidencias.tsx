@@ -49,8 +49,10 @@ export function EvidenciaStatsButton({ planillaId, onClick }: { planillaId: numb
   const [stats, setStats] = useState<EvidenciaStats | null>(null);
 
   useEffect(() => {
-    fetch(`${API}/planillas/${planillaId}/fotos/stats`, { credentials: 'include' })
+    const ac = new AbortController();
+    fetch(`${API}/planillas/${planillaId}/fotos/stats`, { credentials: 'include', signal: ac.signal })
       .then(r => r.ok && r.json()).then(setStats).catch(() => {});
+    return () => ac.abort();
   }, [planillaId]);
 
   if (!stats || stats.itemsTotal === 0) return null;
@@ -72,8 +74,10 @@ export function PanelGeneralEvidencias({ planilla, onClose, onOpenItem }: {
 }) {
   const [stats, setStats] = useState<EvidenciaStats | null>(null);
   useEffect(() => {
-    fetch(`${API}/planillas/${planilla.id}/fotos/stats`, { credentials: 'include' })
+    const ac = new AbortController();
+    fetch(`${API}/planillas/${planilla.id}/fotos/stats`, { credentials: 'include', signal: ac.signal })
       .then(r => r.ok && r.json()).then(setStats);
+    return () => ac.abort();
   }, [planilla.id]);
 
   const groups = groupAvances(planilla.avances);
@@ -172,11 +176,13 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh }: 
 
   useEffect(() => {
     if (!planilla || !avanceItemId) return;
+    const ac = new AbortController();
     setLoading(true);
-    fetch(`${API}/planillas/${planilla.id}/fotos`, { credentials: 'include' })
+    fetch(`${API}/planillas/${planilla.id}/fotos`, { credentials: 'include', signal: ac.signal })
       .then(r => r.ok && r.json())
       .then(data => setEvidencias(data.filter((e: Evidencia) => e.avanceItemId === avanceItemId)))
       .finally(() => setLoading(false));
+    return () => ac.abort();
   }, [planilla?.id, avanceItemId]);
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -268,7 +274,7 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh }: 
                 <Card key={foto.id} variant="outlined" sx={{ overflow: 'hidden' }}>
                   <Box onClick={() => setExpandedFoto(expandedFoto === foto.id ? null : foto.id)}
                     sx={{ aspectRatio: '16/9', background: 'rgba(255,255,255,0.03)', cursor: 'pointer', overflow: 'hidden' }}>
-                    <img src={foto.url} alt="Evidencia" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={foto.url} alt="Evidencia" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </Box>
                   <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -315,7 +321,7 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh }: 
         <Dialog open onClose={() => setExpandedFoto(null)} maxWidth="xl" slotProps={{ paper: { sx: { background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(4px)', boxShadow: 'none' } } }}>
           <IconButton onClick={() => setExpandedFoto(null)} sx={{ position: 'absolute', right: 8, top: 8, zIndex: 1, color: 'white' }}><CloseIcon /></IconButton>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', p: 2 }}>
-            <img src={evidencias.find(e => e.id === expandedFoto)?.url} alt="Evidencia ampliada"
+            <img src={evidencias.find(e => e.id === expandedFoto)?.url} alt="Evidencia ampliada" loading="lazy"
               style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', borderRadius: 8 }} />
           </Box>
         </Dialog>

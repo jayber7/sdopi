@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, Fragment, forwardRef, useImperativeHandle, useRef } from 'react';
+import { useState, useEffect, Fragment, forwardRef, useImperativeHandle, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { can } from '@/lib/permissions';
 import LlenadoAsistido from '../LlenadoAsistido';
 import { mergeParsed } from '@/lib/proyecto-parser';
 import { provincias, municipios } from '@/lib/municipios';
@@ -81,6 +82,8 @@ export default function ProyectoDetailPage() {
   const [tab, setTab] = useState<'general' | 'planillas'>('planillas');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ numero: 0, periodo: '', fechaInicio: '', fechaFin: '', tipo: 'CAO' as 'BASE' | 'CAO' });
+  const [showManualCao, setShowManualCao] = useState(false);
+  const [manualCaoForm, setManualCaoForm] = useState({ numero: 1, periodo: '', fechaInicio: '', fechaFin: '' });
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState(false);
   const [editForm, setEditForm] = useState({ ...INIT_FORM });
@@ -92,9 +95,17 @@ export default function ProyectoDetailPage() {
   const [evidenciaItemId, setEvidenciaItemId] = useState<number | null>(null);
   const [showGeneralEvidencia, setShowGeneralEvidencia] = useState(false);
 
-  const isOper = user?.role === 'operador';
-  const isAdmin = user?.role === 'admin';
-  const isSupervisor = user?.role === 'supervisor';
+  const canPUpdate = can(user, 'proyectos', 'update');
+  const canPDelete = can(user, 'proyectos', 'delete');
+  const canPCreate = can(user, 'planillas', 'create');
+  const canPUpdate2 = can(user, 'planillas', 'update');
+  const canAprobar = can(user, 'planillas', 'aprobar');
+  const canPDelete2 = can(user, 'planillas', 'delete');
+  const canEVerificar = can(user, 'evidencias', 'verificar');
+  const canECreate = can(user, 'evidencias', 'create');
+  const isOper = canPUpdate2 || canPCreate || canPUpdate || canECreate;
+  const isAdmin = canAprobar || canPDelete2 || canPDelete;
+  const isSupervisor = canEVerificar || canAprobar;
   const isBorrador = planilla?.estado === 'borrador';
   const isEnviado = planilla?.estado === 'enviado';
   const isBase = planilla?.tipo === 'BASE';
@@ -103,14 +114,17 @@ export default function ProyectoDetailPage() {
   useEffect(() => {
     const id = params?.id;
     if (!id) return;
+    const ac = new AbortController();
     setLoading(true);
-    fetch(`${API}/proyectos/${id}`, { credentials: 'include' })
+    fetch(`${API}/proyectos/${id}`, { credentials: 'include', signal: ac.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then(async (p) => {
         setProyecto(p);
         if (p?.planillas?.length) loadPlanilla(p.planillas[0].id);
       })
+      .catch((e) => { if (e.name !== 'AbortError') console.error(e); })
       .finally(() => setLoading(false));
+    return () => ac.abort();
   }, [params?.id]);
 
   async function loadPlanilla(id: number) {
@@ -204,6 +218,23 @@ export default function ProyectoDetailPage() {
     } else { const err = await r.json().catch(() => ({ message: 'Error al crear planilla' })); alert(err.message || 'Error al crear planilla'); }
   }
 
+  async function createManualCao() {
+    if (!proyecto) return;
+    const base = proyecto.planillas.find(p => p.tipo === 'BASE');
+    if (!base) { alert('No hay una Planilla Base'); return; }
+    const r = await fetch(`${API}/planillas/manual-cao`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proyectoId: proyecto.id, planillaBaseId: base.id, ...manualCaoForm }),
+      credentials: 'include',
+    });
+    if (r.ok) {
+      const p = await r.json();
+      setShowManualCao(false); setManualCaoForm({ numero: 1, periodo: '', fechaInicio: '', fechaFin: '' });
+      setProyecto((prev) => prev ? { ...prev, planillas: [...prev.planillas, p] } : prev);
+      loadPlanilla(p.id);
+    } else { const err = await r.json().catch(() => ({ message: 'Error al crear CAO' })); alert(err.message || 'Error al crear CAO'); }
+  }
+
   async function deletePlanilla() {
     if (!planilla || !confirm('Eliminar esta planilla?')) return;
     const r = await fetch(`${API}/planillas/${planilla.id}`, { method: 'DELETE', credentials: 'include' });
@@ -231,7 +262,6 @@ export default function ProyectoDetailPage() {
 
   return (
     <Box sx={{ animation: 'fadeIn 0.3s ease both' }}>
-      <Box sx={{ maxWidth: 1280, mx: 'auto' }}>
         {/* Project header */}
         <Card sx={{ mb: 3 }}>
           <CardContent>
@@ -297,8 +327,26 @@ export default function ProyectoDetailPage() {
                 {isBorrador && (isOper || isAdmin) && !showForm && (
                   <Chip icon={<AddIcon />} label="Nueva" onClick={() => setShowForm(true)} variant="outlined" size="small" sx={{ color: 'rgba(0,219,180,0.7)', borderColor: 'rgba(0,219,180,0.3)' }} />
                 )}
+                {isAdmin && !showManualCao && (
+                  <Chip label="CAO Manual" onClick={() => setShowManualCao(true)} variant="outlined" size="small" sx={{ color: 'rgba(255,180,0,0.7)', borderColor: 'rgba(255,180,0,0.3)' }} />
+                )}
               </CardContent>
             </Card>
+
+            {/* Manual CAO dialog */}
+            <Dialog open={showManualCao} onClose={() => setShowManualCao(false)} maxWidth="sm" fullWidth>
+              <DialogTitle sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontSize: '1rem' }}>Crear CAO Manual</DialogTitle>
+              <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
+                <TextField label="Número" type="number" value={manualCaoForm.numero} onChange={e => setManualCaoForm({ ...manualCaoForm, numero: +e.target.value })} size="small" />
+                <TextField label="Período" value={manualCaoForm.periodo} onChange={e => setManualCaoForm({ ...manualCaoForm, periodo: e.target.value })} size="small" />
+                <TextField label="Inicio" type="date" value={manualCaoForm.fechaInicio} onChange={e => setManualCaoForm({ ...manualCaoForm, fechaInicio: e.target.value })} size="small" slotProps={{ inputLabel: { shrink: true } }} />
+                <TextField label="Fin" type="date" value={manualCaoForm.fechaFin} onChange={e => setManualCaoForm({ ...manualCaoForm, fechaFin: e.target.value })} size="small" slotProps={{ inputLabel: { shrink: true } }} />
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setShowManualCao(false)} variant="outlined">Cancelar</Button>
+                <Button onClick={createManualCao} variant="contained">Crear</Button>
+              </DialogActions>
+            </Dialog>
 
             {/* Create planilla form */}
             {showForm && (
@@ -408,7 +456,7 @@ export default function ProyectoDetailPage() {
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                 <TextField label="Días Suspendidos" type="number" value={editForm.suspendidoDias} onChange={e => setEditForm({ ...editForm, suspendidoDias: +e.target.value })} size="small" />
                 <TextField select label="Jefatura" value={editForm.jefatura} onChange={e => setEditForm({ ...editForm, jefatura: e.target.value })} size="small">
-                  {['DI','JE','JT','JUPRE','JUS'].map(j => <MenuItem key={j} value={j}>{j}</MenuItem>)}
+                  {['DI','UDETRA','UEH','UPRADE','UNASVI'].map(j => <MenuItem key={j} value={j}>{j}</MenuItem>)}
                 </TextField>
               </Box>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
@@ -441,7 +489,6 @@ export default function ProyectoDetailPage() {
             </DialogActions>
           </Dialog>
         ), document.body)}
-      </Box>
     </Box>
   );
 }
@@ -523,7 +570,13 @@ const BaseGrid = forwardRef(function BaseGrid({ planilla, isAdmin, isOper, onRef
   function findRubro(id: number | null, codigo: string) { return id ? rubros.find(r => r.id === id) : rubros.find(r => r.codigo === codigo); }
   function avanceCountInRubro(avs: Avance[], codigo: string) { return avs.filter(a => (a.rubroCodigo ?? a.item?.rubro?.codigo ?? 'SIN') === codigo).length; }
 
-  const totalMO = planilla.avances.reduce((s, a) => s + getPU(a) * getCC(a), 0);
+  const totalMO = useMemo(() =>
+    planilla.avances.reduce((s, a) => {
+      const pu = editPU[a.id] !== undefined ? editPU[a.id] : a.precioUnitario ?? a.item?.precioUnitario ?? 0;
+      const cc = editCC[a.id] !== undefined ? editCC[a.id] : a.cantidadContrato ?? a.item?.cantidadContrato ?? 1;
+      return s + pu * cc;
+    }, 0),
+  [planilla.avances, editPU, editCC]);
   const canManage = canEdit && (isAdmin || isOper);
   const t = { bg: 'rgba(91,154,255,0.08)', color: 'rgba(150,200,255,0.7)', border: '1px solid rgba(255,255,255,0.06)' };
 
@@ -532,6 +585,21 @@ const BaseGrid = forwardRef(function BaseGrid({ planilla, isAdmin, isOper, onRef
       {planilla.estado === 'aprobado' && (
         <Box sx={{ m: 2, p: 1.5, borderRadius: 2, background: 'rgba(91,154,255,0.12)', border: '1px solid rgba(91,154,255,0.2)', color: 'rgba(150,200,255,0.9)', fontSize: '0.8125rem' }}>
           Planilla Base aprobada — datos inmutables.
+        </Box>
+      )}
+
+      {canEdit && (
+        <Box sx={{ display: 'flex', gap: 1, mb: 1.5, px: 2 }}>
+          <Button onClick={() => { loadCatalogo(); setShowCat(true); }} size="small" variant="outlined" startIcon={<span>📋</span>}>Importar del catálogo</Button>
+          <Button onClick={() => setEditRubro({ codigo: '', nombre: '' })} size="small" variant="outlined" startIcon={<AddIcon />}>Nuevo Rubro</Button>
+          {editRubro && editRubro.id === undefined && (
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <TextField value={editRubro.codigo} onChange={e => setEditRubro({ ...editRubro, codigo: e.target.value })} size="small" sx={{ width: 100 }} placeholder="Código" />
+              <TextField value={editRubro.nombre} onChange={e => setEditRubro({ ...editRubro, nombre: e.target.value })} size="small" sx={{ width: 200 }} placeholder="Nombre" />
+              <Button onClick={saveRubro} size="small" variant="contained">Agregar</Button>
+              <Button onClick={() => setEditRubro(null)} size="small" variant="text">Cancelar</Button>
+            </Box>
+          )}
         </Box>
       )}
 
@@ -736,10 +804,28 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
 
   const hasRejected = planilla.avances.some((a) => a.aprobado === false);
   const hasRecentApproval = planilla.estado === 'aprobado';
-  const groups = groupAvances(planilla.avances);
-  const grandContrato = planilla.avances.reduce((s, a) => s + cd(a).cc * cd(a).pu, 0);
-  const grandAnterior = planilla.avances.reduce((s, a) => s + hist(a).monto, 0);
-  const grandPresente = planilla.avances.reduce((s, a) => s + getCant(a) * cd(a).pu, 0);
+  const groups = useMemo(() => groupAvances(planilla.avances), [planilla.avances]);
+  const grandContrato = useMemo(() =>
+    planilla.avances.reduce((s, a) => {
+      const pu = a.precioUnitario ?? a.item?.precioUnitario ?? 0;
+      const cc = a.cantidadContrato ?? a.item?.cantidadContrato ?? 1;
+      return s + cc * pu;
+    }, 0),
+  [planilla.avances]);
+  const grandAnterior = useMemo(() =>
+    planilla.avances.reduce((s, a) => {
+      if (!a.itemId || !planilla.historico) return s;
+      const h = planilla.historico[a.itemId] || { cantidad: 0, monto: 0 };
+      return s + h.monto;
+    }, 0),
+  [planilla.avances, planilla.historico]);
+  const grandPresente = useMemo(() =>
+    planilla.avances.reduce((s, a) => {
+      const pu = a.precioUnitario ?? a.item?.precioUnitario ?? 0;
+      const cant = editCant[a.id] !== undefined ? editCant[a.id] : a.cantidad;
+      return s + cant * pu;
+    }, 0),
+  [planilla.avances, editCant]);
   const grandAcumulado = grandAnterior + grandPresente;
 
   return (

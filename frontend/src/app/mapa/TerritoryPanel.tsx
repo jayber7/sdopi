@@ -1,6 +1,7 @@
 'use client';
 
 import { type Municipio, municipios, estadoLabel } from '@/lib/municipios';
+import { useTheme, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
@@ -39,13 +40,14 @@ const dotColor: Record<string, string> = {
 };
 
 export default function TerritoryPanel({ selected, filtroEstado, busqueda, onSelect, onFilterChange, onSearchChange }: Props) {
+  const theme = useTheme();
   const lista = visibles(filtroEstado, busqueda);
 
   return (
-    <Box className="glass-card" sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, background: theme.palette.background.paper, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`, borderRadius: 2, boxShadow: '0 4px 24px rgba(0,0,0,0.25)' }}>
       <Box className="glass-header" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
         <Box>
-          <Typography className="glass-subtitle">Municipios</Typography>
+          <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: alpha(theme.palette.text.secondary, 0.7) }}>Municipios</Typography>
           <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem' }}>{municipios.length} municipios</Typography>
         </Box>
         <TextField
@@ -71,7 +73,7 @@ export default function TerritoryPanel({ selected, filtroEstado, busqueda, onSel
           fullWidth
           slotProps={{
             input: {
-              startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 16, color: 'rgba(150,200,255,0.4)' }} /></InputAdornment>,
+              startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 16, color: alpha(theme.palette.text.secondary, 0.4) }} /></InputAdornment>,
             },
           }}
           sx={{ '& .MuiInputBase-root': { minHeight: '2em', fontSize: '0.8125rem' } }}
@@ -94,11 +96,11 @@ export default function TerritoryPanel({ selected, filtroEstado, busqueda, onSel
               borderRadius: 2,
               cursor: 'pointer',
               transition: 'all 0.12s ease',
-              background: m.id === selected.id ? 'rgba(100,180,255,0.08)' : 'transparent',
-              border: m.id === selected.id ? '1px solid rgba(100,180,255,0.15)' : '1px solid transparent',
+              background: m.id === selected.id ? alpha(theme.palette.primary.main, 0.08) : 'transparent',
+              border: m.id === selected.id ? `1px solid ${alpha(theme.palette.primary.main, 0.15)}` : '1px solid transparent',
               '&:hover': {
-                background: 'rgba(100,180,255,0.05)',
-                borderColor: 'rgba(100,180,255,0.1)',
+                background: alpha(theme.palette.primary.main, 0.05),
+                borderColor: alpha(theme.palette.primary.main, 0.1),
               },
               mb: 0.5,
             }}
@@ -108,9 +110,9 @@ export default function TerritoryPanel({ selected, filtroEstado, busqueda, onSel
               <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8125rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'rgba(255,255,255,0.85)' }}>
                 {m.nombre}
               </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)' }}>{m.provincia}</Typography>
+              <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.7) }}>{m.provincia}</Typography>
             </Box>
-            <Typography variant="caption" sx={{ fontWeight: 600, color: 'rgba(150,200,255,0.5)' }}>{m.avance}%</Typography>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: alpha(theme.palette.text.secondary, 0.7) }}>{m.avance}%</Typography>
           </Box>
         ))}
         {lista.length === 0 && (

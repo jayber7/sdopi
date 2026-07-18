@@ -2,10 +2,8 @@ import type { Metadata } from 'next';
 import { DM_Serif_Display, Sora } from 'next/font/google';
 import './globals.css';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import theme from '@/theme/theme';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeToggleProvider } from '@/context/ThemeToggleContext';
 import Header from './Header';
 
 const serif = DM_Serif_Display({
@@ -20,7 +18,7 @@ const sans = Sora({
 });
 
 export const metadata: Metadata = {
-  title: 'CAO Gestión',
+  title: 'GADOR - SDOP',
   description: 'Sistema de gestión de Certificados de Avance de Obra',
 };
 
@@ -29,13 +27,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" className={`${serif.variable} ${sans.variable}`}>
       <body>
         <AppRouterCacheProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
+          <ThemeToggleProvider>
             <AuthProvider>
               <Header />
-              <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
+              <main className="mx-auto w-full px-4 md:px-8 py-8 max-w-[1600px]">{children}</main>
             </AuthProvider>
-          </ThemeProvider>
+          </ThemeToggleProvider>
         </AppRouterCacheProvider>
       </body>
     </html>

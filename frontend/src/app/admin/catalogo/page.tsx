@@ -23,7 +23,7 @@ import AddIcon from '@mui/icons-material/Add';
 import UploadIcon from '@mui/icons-material/Upload';
 
 const API = '/api';
-const jefaturas = ['DI', 'JE', 'JT', 'JUPRE', 'JUS'];
+const jefaturas = ['DI', 'UDETRA', 'UEH', 'UPRADE', 'UNASVI'];
 
 interface CatalogoRubro { id: number; jefatura: string; nombre: string; _count: { items: number }; }
 interface CatalogoItem { id: number; numero: number; descripcion: string; unidad: string; rubroCatalogoId: number; }
@@ -47,8 +47,10 @@ export default function AdminCatalogoPage() {
   const [importing, setImporting] = useState(false);
 
   useEffect(() => {
-    fetch(`${API}/catalogo/rubros?jefatura=${jefatura}`, { credentials: 'include' }).then(r => r.ok && r.json()).then(setRubros);
+    const ac = new AbortController();
+    fetch(`${API}/catalogo/rubros?jefatura=${jefatura}`, { credentials: 'include', signal: ac.signal }).then(r => r.ok && r.json()).then(setRubros);
     setItems({}); setExpanded({});
+    return () => ac.abort();
   }, [jefatura]);
 
   async function loadItems(rubroId: number, force?: boolean) {

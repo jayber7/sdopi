@@ -1,11 +1,11 @@
 import { Controller, Post, Body, Get, Res, Req, UseGuards, HttpCode } from '@nestjs/common';
-import { Response, Request } from 'express';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RolesGuard } from './guards/roles.guard';
-import { Roles } from './decorators/roles.decorator';
+import { PermissionGuard } from './guards/permission.guard';
+import { RequirePermission } from './decorators/permission.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 
 @Controller('auth')
@@ -40,10 +40,28 @@ export class AuthController {
     return this.authService.me(user.userId);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('usuarios', 'create')
   @Post('register')
   register(@Body() dto: CreateUserDto) {
     return this.authService.register(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('refresh-permissions')
+  async refreshPermissions(
+    @CurrentUser() user: { userId: number },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.refreshPermissions(user.userId);
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie('auth_token', result.token, {
+      httpOnly: true,
+      sameSite: isProd ? 'none' : 'lax',
+      secure: isProd,
+      maxAge: 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+    return result;
   }
 }

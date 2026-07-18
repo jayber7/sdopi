@@ -35,8 +35,8 @@ export class ReportesService {
       tablaFinanciera.push({
         numero: 0,
         periodo: 'ANTICIPO',
-        fechaInicio: proyecto.ordenProceder.toISOString(),
-        fechaFin: proyecto.ordenProceder.toISOString(),
+        fechaInicio: proyecto.ordenProceder?.toISOString() ?? '',
+        fechaFin: proyecto.ordenProceder?.toISOString() ?? '',
         desembolsoEfectuado: 0,
         descuentoAnticipo: 0,
         descuentoAnticipoAcumulado: 0,
@@ -132,16 +132,16 @@ export class ReportesService {
       proyecto: {
         id: proyecto.id,
         nombre: proyecto.nombre,
-        contratoNro: proyecto.contratoNro,
+        contratoNro: proyecto.contratoNro ?? null,
         montoContrato,
         anticipoPct,
         anticipoMonto: proyecto.anticipoMonto,
-        ordenProceder: proyecto.ordenProceder.toISOString(),
-        fechaConclusion: proyecto.fechaConclusion.toISOString(),
-        contratista: proyecto.contratista,
-        supervisor: proyecto.supervisor,
-        fiscal: proyecto.fiscal,
-        direccion: proyecto.direccion,
+        ordenProceder: proyecto.ordenProceder?.toISOString() ?? null,
+        fechaConclusion: proyecto.fechaConclusion?.toISOString() ?? null,
+        contratista: proyecto.contratista ?? null,
+        supervisor: proyecto.supervisor ?? null,
+        fiscal: proyecto.fiscal ?? null,
+        direccion: proyecto.direccion ?? null,
       },
       tablaFinanciera,
       totales: {
@@ -241,7 +241,7 @@ export class ReportesService {
     });
 
     return {
-      proyecto: { id: proyecto.id, nombre: proyecto.nombre, contratoNro: proyecto.contratoNro },
+      proyecto: { id: proyecto.id, nombre: proyecto.nombre, contratoNro: proyecto.contratoNro ?? null },
       totalCaos: proyecto.planillas.length,
       rubros,
     };
@@ -313,11 +313,11 @@ export class ReportesService {
 
       doc.fontSize(9).font('Helvetica-Bold');
       doc.text(`PROYECTO: `, { continued: true }).font('Helvetica').text(p.nombre);
-      doc.font('Helvetica-Bold').text(`CONTRATO N°: `, { continued: true }).font('Helvetica').text(p.contratoNro);
-      doc.font('Helvetica-Bold').text(`CONTRATISTA: `, { continued: true }).font('Helvetica').text(p.contratista);
-      doc.font('Helvetica-Bold').text(`SUPERVISIÓN: `, { continued: true }).font('Helvetica').text(`${p.supervisor}  |  FISCALIZACIÓN: ${p.fiscal}`);
-      const opDate = p.ordenProceder instanceof Date ? p.ordenProceder : new Date(p.ordenProceder);
-      const fcDate = p.fechaConclusion instanceof Date ? p.fechaConclusion : new Date(p.fechaConclusion);
+      doc.font('Helvetica-Bold').text(`CONTRATO N°: `, { continued: true }).font('Helvetica').text(p.contratoNro ?? '-');
+      doc.font('Helvetica-Bold').text(`CONTRATISTA: `, { continued: true }).font('Helvetica').text(p.contratista ?? '-');
+      doc.font('Helvetica-Bold').text(`SUPERVISIÓN: `, { continued: true }).font('Helvetica').text(`${p.supervisor ?? '-'}  |  FISCALIZACIÓN: ${p.fiscal ?? '-'}`);
+      const opDate = p.ordenProceder instanceof Date ? p.ordenProceder : p.ordenProceder ? new Date(p.ordenProceder) : new Date();
+      const fcDate = p.fechaConclusion instanceof Date ? p.fechaConclusion : p.fechaConclusion ? new Date(p.fechaConclusion) : new Date();
       doc.font('Helvetica-Bold').text('ORDEN DE PROCEDER: ', { continued: true }).font('Helvetica').text(`${fdate(opDate)}  |  FECHA CONCLUSIÓN: ${fdate(fcDate)}`);
       doc.font('Helvetica-Bold').text(`MONTO CONTRATO: `, { continued: true }).font('Helvetica').text(`Bs ${fmt(montoContrato)}`);
       doc.font('Helvetica-Bold').text(`ANTICIPO: `, { continued: true }).font('Helvetica').text(`${anticipoPct}% — Bs ${fmt(anticipoMonto)}`);

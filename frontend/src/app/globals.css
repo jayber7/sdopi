@@ -33,6 +33,7 @@
 * {
   box-sizing: border-box;
 }
+html { zoom: 90%; }
 
 body {
   margin: 0;

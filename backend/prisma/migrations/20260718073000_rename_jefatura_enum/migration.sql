@@ -1,0 +1,5 @@
+-- Rename Jefatura enum values
+ALTER TYPE "Jefatura" RENAME VALUE 'JE' TO 'UDETRA';
+ALTER TYPE "Jefatura" RENAME VALUE 'JT' TO 'UEH';
+ALTER TYPE "Jefatura" RENAME VALUE 'JUPRE' TO 'UPRADE';
+ALTER TYPE "Jefatura" RENAME VALUE 'JUS' TO 'UNASVI';

@@ -24,34 +24,59 @@ enum CategoriaEvidencia {
   DESPUES
 }
 
+enum EtapaProyecto {
+  SIN_EJECUCION
+  PREINVERSION
+  INVERSION
+  CAMBIO_PREINVERSION_A_INVERSION
+  INVERSION_PARA_LICITACION
+  EDTP_CONCLUIDO
+  EDTP_CONCLUIDO_ESPERA_INVERSION
+  EN_EJECUCION
+  EN_CIERRE
+  CONCLUIDO
+  CON_ENTREGA_DEFINITIVA
+  CONCILIACION_SALDOS
+  AUDITORIA_EXTERNA
+  SUSPENSION_CONTRATACION
+}
+
 enum Jefatura {
   DI
-  JE
-  JT
-  JUPRE
-  JUS
+  UDETRA
+  UEH
+  UPRADE
+  UNASVI
 }
 
 model Proyecto {
   id              Int       @id @default(autoincrement())
   nombre          String
-  contratoNro     String
+  contratoNro     String?
   montoContrato   Float
   anticipoPct     Float     @default(13.7747448)
   anticipoMonto   Float?
-  ordenProceder   DateTime
-  fechaConclusion DateTime
+  ordenProceder   DateTime?
+  fechaConclusion DateTime?
   suspendidoDias  Int       @default(0)
-  direccion       String
+  direccion       String?
   latitud         Float?
   longitud        Float?
   provincia       String?
   municipio       String?
-  contratista     String
-  supervisor      String
-  fiscal          String
+  contratista     String?
+  supervisor      String?
+  fiscal          String?
   jefatura        Jefatura  @default(DI)
   activo          Boolean   @default(true)
+  // Campos desde Excel GADOR
+  situacion         EtapaProyecto?
+  estructuraFinanciamiento String?
+  montoEjecutado    Float?
+  presupuestoVigente Float?
+  tiempoEjecucion   String?
+  modificaciones    String?
+  detalleObs        String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   rubros          Rubro[]
@@ -123,16 +148,60 @@ model PlanillaCAO {
   @@unique([planillaBaseId, numero])
 }
 
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  permissions RolePermission[]
+  users       User[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Permission {
+  id        Int              @id @default(autoincrement())
+  resource  String
+  action    String
+  roles     RolePermission[]
+  users     UserPermission[]
+  createdAt DateTime         @default(now())
+
+  @@unique([resource, action])
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model UserPermission {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  permissionId Int
+  granted      Boolean    @default(true)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  nombre    String
-  role      String   @default("consulta")
-  activo    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  evidencias EvidenciaFotografica[]
+  id                Int              @id @default(autoincrement())
+  email             String           @unique
+  password          String
+  nombre            String
+  role              String           @default("consulta")
+  roleId            Int?
+  roleRel           Role?            @relation(fields: [roleId], references: [id])
+  activo            Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  evidencias        EvidenciaFotografica[]
+  userPermissions   UserPermission[]
 }
 
 model EvidenciaFotografica {

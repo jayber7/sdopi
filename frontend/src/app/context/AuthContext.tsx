@@ -1,12 +1,14 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { can, type Resource, type Action } from '@/lib/permissions';
 
-interface User {
+export interface User {
   id: number;
   email: string;
   nombre: string;
   role: string;
+  permissions?: string[];
 }
 
 interface AuthContextType {
@@ -14,6 +16,8 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  can: (resource: Resource, action: Action) => boolean;
+  refreshPermissions: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -24,13 +28,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const syncUser = useCallback((u: User) => {
+    setUser({ ...u, permissions: u.permissions ?? [] });
+  }, []);
+
   useEffect(() => {
-    fetch(`${API}/auth/me`, { credentials: 'include' })
+    const ac = new AbortController();
+    fetch(`${API}/auth/me`, { credentials: 'include', signal: ac.signal })
       .then((res) => (res.ok ? res.json() : null))
-      .then((u) => setUser(u))
+      .then((u) => { if (u) syncUser(u); else setUser(null); })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
-  }, []);
+    return () => ac.abort();
+  }, [syncUser]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch(`${API}/auth/login`, {
@@ -44,8 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(err.message || 'Error al iniciar sesion');
     }
     const u = await res.json();
-    setUser(u);
-  }, []);
+    syncUser(u);
+  }, [syncUser]);
 
   const logout = useCallback(async () => {
     await fetch(`${API}/auth/logout`, {
@@ -56,8 +66,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/login';
   }, []);
 
+  const canUser = useCallback((resource: Resource, action: Action) => can(user, resource, action), [user]);
+
+  const refreshPermissions = useCallback(async () => {
+    const res = await fetch(`${API}/auth/refresh-permissions`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setUser(prev => prev ? { ...prev, permissions: data.permissions } : null);
+    }
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, can: canUser, refreshPermissions }}>
       {children}
     </AuthContext.Provider>
   );

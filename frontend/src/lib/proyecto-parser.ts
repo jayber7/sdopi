@@ -15,7 +15,7 @@ export interface ParsedProyecto {
   jefatura?: string;
 }
 
-const JEFATURAS = ['DI', 'JE', 'JT', 'JUPRE', 'JUS'];
+const JEFATURAS = ['DI', 'UDETRA', 'UEH', 'UPRADE', 'UNASVI'];
 const MONTHS: Record<string, number> = {
   enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6,
   julio: 7, agosto: 8, septiembre: 9, octubre: 10, noviembre: 11, diciembre: 12,
@@ -153,7 +153,7 @@ export function parseProyecto(text: string): ParsedProyecto {
 
     // jefatura
     if (!result.jefatura) {
-      m = trimmed.match(/[Jj]efatura\s*[:\-\t]\s*(DI|JE|JT|JUPRE|JUS)/);
+      m = trimmed.match(/[Jj]efatura\s*[:\-\t]\s*(DI|UPRADE|UDETRA|UNASVI|UEH)/);
       if (m && JEFATURAS.includes(m[1].toUpperCase())) { result.jefatura = m[1].toUpperCase(); continue; }
     }
 

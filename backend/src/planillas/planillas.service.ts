@@ -389,9 +389,117 @@ export class PlanillasService {
     return this.findOne(id);
   }
 
-  async cleanupOrphans() {
-    const orphanFilter = { itemId: null, rubroCodigo: null, descripcion: null };
-    const { count } = await this.prisma.avanceItem.deleteMany({ where: orphanFilter });
+  async syncAllBases() {
+    const proyectos = await this.prisma.proyecto.findMany({
+      where: { activo: true },
+      select: { id: true, nombre: true, ordenProceder: true, fechaConclusion: true },
+    });
+
+    let basesCreated = 0;
+    let basesSynced = 0;
+    let totalItemsCreated = 0;
+    const errors: { proyectoId: number; error: string }[] = [];
+
+    for (const proyecto of proyectos) {
+      try {
+        let base = await this.prisma.planillaCAO.findFirst({
+          where: { proyectoId: proyecto.id, tipo: 'BASE' },
+        });
+
+        if (!base) {
+          base = await this.prisma.planillaCAO.create({
+            data: {
+              tipo: 'BASE', numero: 0,
+              periodo: 'PLANILLA BASE - DATOS DE CONTRATO',
+              fechaInicio: proyecto.ordenProceder ?? new Date(),
+              fechaFin: proyecto.fechaConclusion ?? new Date(),
+              proyectoId: proyecto.id,
+            },
+          });
+          basesCreated++;
+        } else if (base.estado !== 'borrador') {
+          continue;
+        }
+
+        const items = await this.prisma.item.findMany({
+          where: { rubro: { proyectoId: proyecto.id } },
+          include: { rubro: true },
+        });
+        if (items.length === 0) continue;
+
+        const existingAvances = await this.prisma.avanceItem.findMany({
+          where: { planillaId: base.id, itemId: { not: null } },
+        });
+        const existingByItemId = new Set(existingAvances.map(a => a.itemId!));
+
+        let created = 0;
+        for (const item of items) {
+          if (!existingByItemId.has(item.id)) {
+            await this.prisma.avanceItem.create({
+              data: {
+                planillaId: base.id, itemId: item.id,
+                cantidad: 0, monto: 0, avancePct: 0,
+                descripcion: item.descripcion, unidad: item.unidad,
+                precioUnitario: item.precioUnitario, cantidadContrato: item.cantidadContrato,
+                rubroCodigo: item.rubro.codigo, rubroNombre: item.rubro.nombre,
+              },
+            });
+            created++;
+          }
+        }
+
+        if (created > 0) {
+          basesSynced++;
+          totalItemsCreated += created;
+        }
+      } catch (e: any) {
+        errors.push({ proyectoId: proyecto.id, error: e.message });
+      }
+    }
+
+    return { basesCreated, basesSynced, totalItemsCreated, errors };
+  }
+
+  async manualCao(data: { proyectoId: number; planillaBaseId: number; numero: number; periodo: string; fechaInicio: Date; fechaFin: Date }) {
+    const base = await this.prisma.planillaCAO.findUnique({ where: { id: data.planillaBaseId } });
+    if (!base || base.tipo !== 'BASE') throw new BadRequestException('Planilla Base no encontrada');
+    if (base.estado !== 'aprobado') throw new BadRequestException('La Planilla Base debe estar aprobada');
+
+    const existing = await this.prisma.planillaCAO.findFirst({
+      where: { planillaBaseId: data.planillaBaseId, numero: data.numero },
+    });
+    if (existing) throw new BadRequestException(`Ya existe una CAO N°${data.numero} para esta Base`);
+
+    const baseItems = await this.prisma.avanceItem.findMany({
+      where: { planillaId: data.planillaBaseId, itemId: { not: null } },
+    });
+
+    return this.prisma.planillaCAO.create({
+      data: {
+        tipo: 'CAO',
+        numero: data.numero,
+        periodo: data.periodo,
+        fechaInicio: data.fechaInicio,
+        fechaFin: data.fechaFin,
+        proyectoId: data.proyectoId,
+        planillaBaseId: data.planillaBaseId,
+        avances: {
+          create: baseItems.map((a) => ({
+            itemId: a.itemId, descripcion: a.descripcion, unidad: a.unidad,
+            precioUnitario: a.precioUnitario, cantidadContrato: a.cantidadContrato,
+            rubroCodigo: a.rubroCodigo, rubroNombre: a.rubroNombre,
+            cantidad: 0, monto: 0, avancePct: 0,
+          })),
+        },
+      },
+      include: this.include,
+    });
+  }
+
+  async cleanupOrphans(proyectoId?: number) {
+    const where: any = { itemId: null, rubroCodigo: null, descripcion: null };
+    if (proyectoId) where.planilla = { proyectoId };
+    const { count } = await this.prisma.avanceItem.deleteMany({ where });
     return { deleted: count };
   }
 

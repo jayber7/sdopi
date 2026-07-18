@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -65,32 +65,28 @@ export default function ReportesPage() {
   const [planillas, setPlanillas] = useState<PlanillaData | null>(null);
   const [loading, setLoading] = useState(true);
   const [proyectoNombre, setProyectoNombre] = useState('');
-  const [hastaCao, setHastaCao] = useState<number | undefined>(undefined);
+  const [hastaCao, setHastaCao] = useState<number | undefined>(() => {
+    if (typeof window === 'undefined') return undefined;
+    const hc = new URLSearchParams(window.location.search).get('hastaCao');
+    return hc ? Number(hc) : undefined;
+  });
   const [totalCaos, setTotalCaos] = useState(0);
-  const [searchParams, setSearchParams] = useState<URLSearchParams | null>(null);
-
-  useEffect(() => { setSearchParams(new URLSearchParams(window.location.search)); }, []);
 
   useEffect(() => {
     const id = params?.proyectoId;
     if (!id) return;
-    const hc = searchParams?.get('hastaCao');
-    setHastaCao(hc ? Number(hc) : undefined);
-  }, [params?.proyectoId, searchParams]);
-
-  useEffect(() => {
-    const id = params?.proyectoId;
-    if (!id) return;
+    const ac = new AbortController();
     setLoading(true);
-    const qs = hastaCao ? `?hastaCao=${hastaCao}` : '';
+    const qs = hastaCao !== undefined ? `?hastaCao=${hastaCao}` : '';
     Promise.all([
-      fetch(`${API}/reportes/analisis-cao/${id}${qs}`, { credentials: 'include' }).then(r => r.ok ? r.json() : null),
-      fetch(`${API}/reportes/planillas/${id}${qs}`, { credentials: 'include' }).then(r => r.ok ? r.json() : null),
+      fetch(`${API}/reportes/analisis-cao/${id}${qs}`, { credentials: 'include', signal: ac.signal }).then(r => r.ok ? r.json() : null),
+      fetch(`${API}/reportes/planillas/${id}${qs}`, { credentials: 'include', signal: ac.signal }).then(r => r.ok ? r.json() : null),
     ]).then(([a, p]) => {
       setAnalisis(a); setPlanillas(p);
       setProyectoNombre(a?.proyecto?.nombre || p?.proyecto?.nombre || '');
       setTotalCaos(a?.totalCaos || p?.totalCaos || 0);
     }).finally(() => setLoading(false));
+    return () => ac.abort();
   }, [params?.proyectoId, hastaCao]);
 
   function cambiarHastaCao(n: number) {
@@ -103,7 +99,7 @@ export default function ReportesPage() {
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}><CircularProgress size={32} sx={{ color: 'rgba(100,180,255,0.5)' }} /></Box>;
 
   return (
-    <Box sx={{ maxWidth: 1280, mx: 'auto', animation: 'fadeIn 0.3s ease both' }}>
+    <Box sx={{ animation: 'fadeIn 0.3s ease both' }}>
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
@@ -232,11 +228,13 @@ function AnalisisReport({ data }: { data: AnalisisData }) {
 }
 
 function CurvaAvance({ data }: { data: AnalisisRow[] }) {
-  let acFisico = 0, acFinanciero = 0;
-  const chartData = data.map(r => {
-    acFisico += r.avanceFisico; acFinanciero += r.avanceFinanciero;
-    return { cao: r.numero === 0 ? 'ANTICIPO' : `CAO ${r.numero}`, programado: data.length > 1 ? (r.numero / (data.length - 1)) * 100 : 0, ejecutadoFisico: acFisico * 100, ejecutadoFinanciero: acFinanciero * 100 };
-  });
+  const chartData = useMemo(() => {
+    let acFisico = 0, acFinanciero = 0;
+    return data.map(r => {
+      acFisico += r.avanceFisico; acFinanciero += r.avanceFinanciero;
+      return { cao: r.numero === 0 ? 'ANTICIPO' : `CAO ${r.numero}`, programado: data.length > 1 ? (r.numero / (data.length - 1)) * 100 : 0, ejecutadoFisico: acFisico * 100, ejecutadoFinanciero: acFinanciero * 100 };
+    });
+  }, [data]);
 
   return (
     <Card>
