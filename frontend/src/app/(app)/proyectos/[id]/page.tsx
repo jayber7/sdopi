@@ -3,7 +3,7 @@
 import { useState, useEffect, Fragment, forwardRef, useImperativeHandle, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@/app/context/AuthContext';
 import { can } from '@/lib/permissions';
 import { useJefatura } from '@/context/JefaturaContext';
 import LlenadoAsistido from '../LlenadoAsistido';
@@ -33,6 +33,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import SendIcon from '@mui/icons-material/Send';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import UndoIcon from '@mui/icons-material/Undo';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
@@ -125,21 +126,36 @@ export default function ProyectoDetailPage() {
         </Box>
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
           <Box sx={kpiStyle}>
-            <Typography sx={labelSx}>Planillas CAO por Estado</Typography>
-            <Box sx={{ display: 'flex', gap: 3, mt: 1 }}>
-              {Object.entries(planillasPorEstado).map(([est, c]) => (
-                <Box key={est} sx={{ textAlign: 'center' }}>
-                  <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: est === 'aprobado' ? '#81c784' : est === 'enviado' ? '#ffb74d' : 'rgba(150,200,255,0.4)' }}>{c}</Typography>
-                  <Typography sx={{ fontSize: '0.65rem', color: 'rgba(150,200,255,0.4)' }}>{est}</Typography>
-                </Box>
-              ))}
-              {planillasCAO.length === 0 && <Typography sx={{ color: 'rgba(150,200,255,0.25)', fontSize: '0.8rem' }}>Sin planillas CAO</Typography>}
-            </Box>
+            <Typography sx={labelSx}>Avance Físico</Typography>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={[
+                  { name: 'Ejecutado', value: Math.round(montoEjecutado * 100) / 100 },
+                  { name: 'Pendiente', value: Math.round(Math.max(0, montoTotal - montoEjecutado) * 100) / 100 },
+                ]} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value" startAngle={90} endAngle={-270}>
+                  <Cell fill="#4fc3f7" />
+                  <Cell fill="rgba(150,200,255,0.12)" />
+                </Pie>
+                <text x="50%" y="47%" textAnchor="middle" fill="rgba(150,200,255,0.9)" fontSize="1.3rem" fontWeight={700}>{avanceFisico.toFixed(1)}%</text>
+                <text x="50%" y="60%" textAnchor="middle" fill="rgba(150,200,255,0.35)" fontSize="0.65rem">ejecutado</text>
+              </PieChart>
+            </ResponsiveContainer>
           </Box>
           <Box sx={kpiStyle}>
-            <Typography sx={labelSx}>Items con Avance</Typography>
-            <Typography sx={valueSx}>{itemsConAvance}/{totalItems}</Typography>
-            <Typography sx={{ fontSize: '0.7rem', color: 'rgba(150,200,255,0.35)' }}>{totalItems > 0 ? ((itemsConAvance / totalItems) * 100).toFixed(0) : 0}% del total</Typography>
+            <Typography sx={labelSx}>Avance Financiero</Typography>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={[
+                  { name: 'Ejecutado', value: Math.round(montoEjecutado * 100) / 100 },
+                  { name: 'Saldo', value: Math.round(Math.max(0, proyecto.montoContrato - montoEjecutado) * 100) / 100 },
+                ]} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value" startAngle={90} endAngle={-270}>
+                  <Cell fill="#66bb6a" />
+                  <Cell fill="rgba(150,200,255,0.12)" />
+                </Pie>
+                <text x="50%" y="47%" textAnchor="middle" fill="rgba(150,200,255,0.9)" fontSize="1.3rem" fontWeight={700}>{proyecto.montoContrato > 0 ? ((montoEjecutado / proyecto.montoContrato) * 100).toFixed(1) : 0}%</text>
+                <text x="50%" y="60%" textAnchor="middle" fill="rgba(150,200,255,0.35)" fontSize="0.65rem">ejecutado</text>
+              </PieChart>
+            </ResponsiveContainer>
           </Box>
         </Box>
       </Box>

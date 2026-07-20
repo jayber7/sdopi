@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/app/context/AuthContext';
 import { useJefatura } from '@/context/JefaturaContext';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -10,6 +10,7 @@ import Grid from '@mui/material/Grid';
 import CircularProgress from '@mui/material/CircularProgress';
 import Chip from '@mui/material/Chip';
 import { alpha, useTheme } from '@mui/material/styles';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const API = '/api';
 
@@ -129,15 +130,20 @@ export default function DashboardPage() {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>Evidencias por Estado</Typography>
-              <Box sx={{ display: 'flex', gap: 3 }}>
-                {Object.entries(data.evidenciasPorEstado || {}).map(([est, c]) => (
-                  <Box key={est} sx={{ textAlign: 'center' }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: est === 'VERIFICADO' ? '#81c784' : est === 'RECHAZADO' ? '#ef5350' : est === 'SOSPECHOSO' ? '#ffb74d' : alpha(theme.palette.text.secondary, 0.5) }}>{c as number}</Typography>
-                    <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.5) }}>{est}</Typography>
-                  </Box>
-                ))}
-              </Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>Proyectos Atrasados / En Tiempo</Typography>
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie data={[
+                    { name: 'Atrasados', value: data.proyectosAtrasados },
+                    { name: 'En Tiempo', value: data.proyectosSinAtraso },
+                  ]} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" startAngle={90} endAngle={-270}>
+                    <Cell fill="#ef5350" />
+                    <Cell fill="#66bb6a" />
+                  </Pie>
+                  <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, fontSize: '0.8rem' }} />
+                  <Legend formatter={(v: string) => <span style={{ color: 'rgba(150,200,255,0.7)', fontSize: '0.8rem' }}>{v}</span>} />
+                </PieChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </Grid>

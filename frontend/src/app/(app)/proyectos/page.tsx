@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/app/context/AuthContext';
 import { can } from '@/lib/permissions';
 import { useJefatura } from '@/context/JefaturaContext';
 import LlenadoAsistido from './LlenadoAsistido';

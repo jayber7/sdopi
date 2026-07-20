@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/app/context/AuthContext';
 import { can } from '@/lib/permissions';
 import Link from 'next/link';
 import Box from '@mui/material/Box';
