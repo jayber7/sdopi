@@ -106,6 +106,9 @@ export default function ProyectoDetailPage() {
     const montoTotal = items.reduce((s: number, i: any) => s + (i.montoOriginal || 0), 0);
     const montoEjecutado = items.reduce((s: number, i: any) => s + (i.avances?.reduce((a: number, av: any) => a + (av.monto || 0), 0) || 0), 0);
     const avanceFisico = montoTotal > 0 ? (montoEjecutado / montoTotal * 100) : 0;
+    const anticipoPct = proyecto.anticipoPct / 100;
+    const montoLiquido = anticipoPct * proyecto.montoContrato + montoEjecutado * (1 - anticipoPct);
+    const avanceFinanciero = proyecto.montoContrato > 0 ? (montoLiquido / proyecto.montoContrato * 100) : 0;
     const saldo = proyecto.montoContrato - montoEjecutado;
     const diasTranscurridos = proyecto.ordenProceder ? Math.floor((Date.now() - new Date(proyecto.ordenProceder).getTime()) / 86400000) : 0;
     const diasTotales = (proyecto.ordenProceder && proyecto.fechaConclusion) ? Math.floor((new Date(proyecto.fechaConclusion).getTime() - new Date(proyecto.ordenProceder).getTime()) / 86400000) : 0;
@@ -146,13 +149,13 @@ export default function ProyectoDetailPage() {
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={[
-                  { name: 'Ejecutado', value: Math.round(montoEjecutado * 100) / 100 },
-                  { name: 'Saldo', value: Math.round(Math.max(0, proyecto.montoContrato - montoEjecutado) * 100) / 100 },
+                  { name: 'Ejecutado', value: Math.round(montoLiquido * 100) / 100 },
+                  { name: 'Saldo', value: Math.round(Math.max(0, proyecto.montoContrato - montoLiquido) * 100) / 100 },
                 ]} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value" startAngle={90} endAngle={-270}>
                   <Cell fill="#66bb6a" />
                   <Cell fill="rgba(150,200,255,0.12)" />
                 </Pie>
-                <text x="50%" y="47%" textAnchor="middle" fill="rgba(150,200,255,0.9)" fontSize="1.3rem" fontWeight={700}>{proyecto.montoContrato > 0 ? ((montoEjecutado / proyecto.montoContrato) * 100).toFixed(1) : 0}%</text>
+                <text x="50%" y="47%" textAnchor="middle" fill="rgba(150,200,255,0.9)" fontSize="1.3rem" fontWeight={700}>{avanceFinanciero.toFixed(1)}%</text>
                 <text x="50%" y="60%" textAnchor="middle" fill="rgba(150,200,255,0.35)" fontSize="0.65rem">ejecutado</text>
               </PieChart>
             </ResponsiveContainer>
