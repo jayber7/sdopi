@@ -10,9 +10,19 @@ import { Jefatura } from '@prisma/client';
 export class ProyectosController {
   constructor(private service: ProyectosService) {}
 
+  @Get('dashboard')
+  dashboard() {
+    return this.service.dashboard();
+  }
+
   @Get()
   findAll(@Query('municipio') municipio?: string, @Query('provincia') provincia?: string, @Query('jefatura') jefatura?: Jefatura) {
     return this.service.findAll(municipio, provincia, jefatura);
+  }
+
+  @Get('contar-por-municipio')
+  contarPorMunicipio(@Query('jefatura') jefatura?: Jefatura) {
+    return this.service.contarPorMunicipio(jefatura);
   }
 
   @Get(':id')

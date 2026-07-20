@@ -14,6 +14,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Divider from '@mui/material/Divider';
 import Avatar from '@mui/material/Avatar';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import PeopleIcon from '@mui/icons-material/People';
@@ -101,6 +102,14 @@ export default function Header() {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, md: 1.5 } }}>
+            <Button
+              component="a"
+              href="/dashboard"
+              startIcon={<DashboardIcon />}
+              sx={{ color: alpha(theme.palette.text.secondary, 0.6), '&:hover': { color: alpha(theme.palette.primary.light, 0.95) }, fontSize: { xs: '0.7rem', md: '0.8125rem' }, minWidth: 0 }}
+            >
+              Dashboard
+            </Button>
             <Button
               component="a"
               href="/"

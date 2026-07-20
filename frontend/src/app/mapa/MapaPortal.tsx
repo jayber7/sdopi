@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 
 import { municipios, type Municipio, ciudadOruro } from '@/lib/municipios';
 import { getRoute } from '@/lib/osm-services';
+import { useJefatura } from '@/context/JefaturaContext';
 import MapaOruro from './MapaOruro';
 import TerritoryPanel from './TerritoryPanel';
 import ProjectList from './ProjectList';
@@ -14,7 +15,22 @@ export default function MapaPortal() {
   const [busqueda, setBusqueda] = useState('');
   const [routeVisible, setRouteVisible] = useState(true);
   const [routeGeo, setRouteGeo] = useState<any>(null);
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const routeCache = useRef<Record<string, any>>({});
+  const { jefatura } = useJefatura();
+
+  useEffect(() => {
+    fetch(`/api/proyectos/contar-por-municipio?jefatura=${jefatura}`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        const map: Record<string, number> = {};
+        (Array.isArray(data) ? data : []).forEach((item: any) => {
+          if (item.municipio) map[item.municipio] = item._count?.municipio ?? 0;
+        });
+        setCounts(map);
+      })
+      .catch(() => {});
+  }, [jefatura]);
 
   const handleSelect = useCallback(async (m: Municipio) => {
     setSelected(m);
@@ -53,6 +69,7 @@ export default function MapaPortal() {
           selected={selected}
           filtroEstado={filtroEstado}
           busqueda={busqueda}
+          counts={counts}
           onSelect={handleSelect}
           onFilterChange={setFiltroEstado}
           onSearchChange={setBusqueda}
@@ -63,6 +80,7 @@ export default function MapaPortal() {
           selected={selected}
           filtroEstado={filtroEstado}
           busqueda={busqueda}
+          counts={counts}
           routeVisible={routeVisible}
           routeGeo={routeGeo}
           routeInfo={routeInfo}

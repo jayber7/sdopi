@@ -61,6 +61,7 @@ const INIT_FORM = {
   direccion: '', latitud: '', longitud: '',
   provincia: '', municipio: '',
   contratista: '', supervisor: '', fiscal: '', jefatura: 'DI',
+  situacion: '',
 };
 
 const ETAPA_LABEL: Record<string, string> = {
@@ -137,6 +138,7 @@ export default function ProyectosPage() {
       longitud: tieneCoords ? String(p.longitud) : '',
       provincia: p.provincia || '', municipio: p.municipio || '',
       contratista: p.contratista, supervisor: p.supervisor, fiscal: p.fiscal, jefatura: p.jefatura,
+      situacion: p.situacion || '',
     });
     setModal({ open: true, edit: p });
   }
@@ -335,6 +337,12 @@ export default function ProyectosPage() {
             <TextField label="Días Suspendidos" type="number" value={form.suspendidoDias} onChange={e => setForm({ ...form, suspendidoDias: +e.target.value })} size="small" />
             <TextField select label="Jefatura" value={form.jefatura} onChange={e => setForm({ ...form, jefatura: e.target.value })} size="small">
               {['DI','UDETRA','UEH','UPRADE','UNASVI'].map(j => <MenuItem key={j} value={j}>{j}</MenuItem>)}
+            </TextField>
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <TextField select label="Situación" value={form.situacion} onChange={e => setForm({ ...form, situacion: e.target.value })} size="small">
+              <MenuItem value="">Sin especificar</MenuItem>
+              {Object.entries(ETAPA_LABEL).map(([k, v]) => <MenuItem key={k} value={k}>{v}</MenuItem>)}
             </TextField>
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>

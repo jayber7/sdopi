@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { can } from '@/lib/permissions';
+import { useJefatura } from '@/context/JefaturaContext';
 import LlenadoAsistido from '../LlenadoAsistido';
 import { mergeParsed } from '@/lib/proyecto-parser';
 import { provincias, municipios } from '@/lib/municipios';
@@ -71,16 +72,79 @@ const INIT_FORM = {
   direccion: '', latitud: '', longitud: '',
   provincia: '', municipio: '',
   contratista: '', supervisor: '', fiscal: '', jefatura: 'DI',
+  situacion: '',
+};
+
+const ETAPA_LABEL: Record<string, string> = {
+  SIN_EJECUCION: 'Sin Ejecución', PREINVERSION: 'Preinversión', INVERSION: 'Inversión',
+  CAMBIO_PREINVERSION_A_INVERSION: 'Cambio a Inversión', INVERSION_PARA_LICITACION: 'Inversión para Licitación',
+  EDTP_CONCLUIDO: 'EDTP Concluido', EDTP_CONCLUIDO_ESPERA_INVERSION: 'EDTP Concluido (espera inversión)',
+  EN_EJECUCION: 'En Ejecución', EN_CIERRE: 'En Cierre', CONCLUIDO: 'Concluido',
+  CON_ENTREGA_DEFINITIVA: 'Con Entrega Definitiva', CONCILIACION_SALDOS: 'Conciliación de Saldos',
+  AUDITORIA_EXTERNA: 'Auditoría Externa', SUSPENSION_CONTRATACION: 'Suspensión de Contratación',
 };
 
 export default function ProyectoDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { jefatura: jefaturaActual } = useJefatura();
   const { user } = useAuth();
   const [proyecto, setProyecto] = useState<Proyecto | null>(null);
   const [planilla, setPlanilla] = useState<Planilla | null>(null);
-  const [tab, setTab] = useState<'general' | 'planillas'>('planillas');
+  const [tab, setTab] = useState<'general' | 'planillas' | 'dashboard'>('planillas');
   const [showForm, setShowForm] = useState(false);
+
+  const dashboardContent = useMemo(() => {
+    if (!proyecto) return null;
+    const items = (proyecto.rubros?.flatMap(r => r.items || []) || []) as any[];
+    const totalItems = items.length;
+    const itemsConAvance = items.filter((i: any) => i.avances?.some((a: any) => a.cantidad > 0)).length;
+    const planillasCAO = (proyecto.planillas || []).filter(p => p.tipo !== 'BASE');
+    const planillasPorEstado: Record<string, number> = {};
+    for (const p of planillasCAO) planillasPorEstado[p.estado] = (planillasPorEstado[p.estado] || 0) + 1;
+    const montoTotal = items.reduce((s: number, i: any) => s + (i.montoOriginal || 0), 0);
+    const montoEjecutado = items.reduce((s: number, i: any) => s + (i.avances?.reduce((a: number, av: any) => a + (av.monto || 0), 0) || 0), 0);
+    const avanceFisico = montoTotal > 0 ? (montoEjecutado / montoTotal * 100) : 0;
+    const saldo = proyecto.montoContrato - montoEjecutado;
+    const diasTranscurridos = proyecto.ordenProceder ? Math.floor((Date.now() - new Date(proyecto.ordenProceder).getTime()) / 86400000) : 0;
+    const diasTotales = (proyecto.ordenProceder && proyecto.fechaConclusion) ? Math.floor((new Date(proyecto.fechaConclusion).getTime() - new Date(proyecto.ordenProceder).getTime()) / 86400000) : 0;
+    const tiempoPct = diasTotales > 0 ? (diasTranscurridos / diasTotales * 100) : 0;
+    const kpiStyle = { p: 2, borderRadius: 1, border: '1px solid rgba(255,255,255,0.08)', bgcolor: 'rgba(255,255,255,0.02)' };
+    const labelSx = { color: 'rgba(150,200,255,0.5)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' };
+    const valueSx = { fontSize: '1.25rem', fontWeight: 700, mt: 0.25 };
+
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2 }}>
+          <Box sx={kpiStyle}><Typography sx={labelSx}>Avance Físico</Typography><Typography sx={{ ...valueSx, color: avanceFisico > 80 ? '#81c784' : avanceFisico > 40 ? '#ffb74d' : '#ef5350' }}>{avanceFisico.toFixed(2)}%</Typography></Box>
+          <Box sx={kpiStyle}><Typography sx={labelSx}>Avance Financiero</Typography><Typography sx={valueSx}>Bs {fmt(montoEjecutado)}</Typography><Typography sx={{ fontSize: '0.7rem', color: 'rgba(150,200,255,0.35)' }}>de Bs {fmt(proyecto.montoContrato)}</Typography></Box>
+          <Box sx={kpiStyle}><Typography sx={labelSx}>Saldo por Ejecutar</Typography><Typography sx={{ ...valueSx, color: saldo < 0 ? '#ef5350' : '#4fc3f7' }}>Bs {fmt(Math.max(0, saldo))}</Typography></Box>
+          <Box sx={kpiStyle}><Typography sx={labelSx}>Tiempo</Typography><Typography sx={{ ...valueSx, color: tiempoPct > 100 ? '#ef5350' : '#4fc3f7' }}>{tiempoPct.toFixed(0)}%</Typography><Typography sx={{ fontSize: '0.7rem', color: 'rgba(150,200,255,0.35)' }}>{diasTranscurridos}/{diasTotales} días</Typography></Box>
+          <Box sx={kpiStyle}><Typography sx={labelSx}>Items</Typography><Typography sx={valueSx}>{itemsConAvance}/{totalItems}</Typography><Typography sx={{ fontSize: '0.7rem', color: 'rgba(150,200,255,0.35)' }}>con avance</Typography></Box>
+          <Box sx={kpiStyle}><Typography sx={labelSx}>Anticipo</Typography><Typography sx={valueSx}>{proyecto.anticipoPct}%</Typography><Typography sx={{ fontSize: '0.7rem', color: 'rgba(150,200,255,0.35)' }}>Días suspendidos: {proyecto.suspendidoDias}</Typography></Box>
+        </Box>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+          <Box sx={kpiStyle}>
+            <Typography sx={labelSx}>Planillas CAO por Estado</Typography>
+            <Box sx={{ display: 'flex', gap: 3, mt: 1 }}>
+              {Object.entries(planillasPorEstado).map(([est, c]) => (
+                <Box key={est} sx={{ textAlign: 'center' }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: est === 'aprobado' ? '#81c784' : est === 'enviado' ? '#ffb74d' : 'rgba(150,200,255,0.4)' }}>{c}</Typography>
+                  <Typography sx={{ fontSize: '0.65rem', color: 'rgba(150,200,255,0.4)' }}>{est}</Typography>
+                </Box>
+              ))}
+              {planillasCAO.length === 0 && <Typography sx={{ color: 'rgba(150,200,255,0.25)', fontSize: '0.8rem' }}>Sin planillas CAO</Typography>}
+            </Box>
+          </Box>
+          <Box sx={kpiStyle}>
+            <Typography sx={labelSx}>Items con Avance</Typography>
+            <Typography sx={valueSx}>{itemsConAvance}/{totalItems}</Typography>
+            <Typography sx={{ fontSize: '0.7rem', color: 'rgba(150,200,255,0.35)' }}>{totalItems > 0 ? ((itemsConAvance / totalItems) * 100).toFixed(0) : 0}% del total</Typography>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }, [proyecto]);
   const [form, setForm] = useState({ numero: 0, periodo: '', fechaInicio: '', fechaFin: '', tipo: 'CAO' as 'BASE' | 'CAO' });
   const [showManualCao, setShowManualCao] = useState(false);
   const [manualCaoForm, setManualCaoForm] = useState({ numero: 1, periodo: '', fechaInicio: '', fechaFin: '' });
@@ -89,6 +153,7 @@ export default function ProyectoDetailPage() {
   const [editForm, setEditForm] = useState({ ...INIT_FORM });
   const editFormRef = useRef(editForm);
   useEffect(() => { editFormRef.current = editForm; }, [editForm]);
+  useEffect(() => { if (proyecto && proyecto.jefatura !== jefaturaActual) router.push('/proyectos'); }, [jefaturaActual, proyecto, router]);
   const [editHeader, setEditHeader] = useState(false);
   const [headerForm, setHeaderForm] = useState({ periodo: '', fechaInicio: '', fechaFin: '' });
   const puccRef = useRef<{ saveAllPending: () => Promise<void> }>(null);
@@ -184,6 +249,7 @@ export default function ProyectoDetailPage() {
       longitud: tieneCoords ? String(proyecto.longitud) : '',
       provincia: proyecto.provincia || '', municipio: proyecto.municipio || '',
       contratista: proyecto.contratista, supervisor: proyecto.supervisor, fiscal: proyecto.fiscal, jefatura: proyecto.jefatura,
+      situacion: proyecto.situacion || '',
     });
     setEditModal(true);
   }
@@ -282,7 +348,7 @@ export default function ProyectoDetailPage() {
             <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
               {(isAdmin || isOper) && <Button onClick={openEdit} startIcon={<EditIcon />} variant="outlined" size="small">Editar proyecto</Button>}
               {isAdmin && <Button onClick={desactivar} startIcon={<DeleteIcon />} variant="outlined" size="small" color="error">Desactivar proyecto</Button>}
-              <Button onClick={() => window.open(`/reportes/${proyecto.id}`, '_blank')} startIcon={<AssessmentIcon />} variant="outlined" size="small">Reportes</Button>
+              <Button onClick={() => router.push(`/reportes/${proyecto.id}`)} startIcon={<AssessmentIcon />} variant="outlined" size="small">Reportes</Button>
             </Box>
           </CardContent>
         </Card>
@@ -291,6 +357,7 @@ export default function ProyectoDetailPage() {
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, '& .MuiTab-root': { minWidth: 120 } }}>
           <Tab label="General" value="general" />
           <Tab label={`Planillas (${proyecto.planillas.length})`} value="planillas" />
+          <Tab label="Dashboard" value="dashboard" />
         </Tabs>
 
         {tab === 'general' && (
@@ -430,6 +497,8 @@ export default function ProyectoDetailPage() {
           </Box>
         )}
 
+        {tab === 'dashboard' && dashboardContent}
+
         {/* Evidence modals */}
         {evidenciaItemId != null && planilla && (
           <PanelEvidencias planilla={planilla} avanceItemId={evidenciaItemId} onClose={() => setEvidenciaItemId(null)} onRefresh={() => loadPlanilla(planilla.id)} />
@@ -457,6 +526,12 @@ export default function ProyectoDetailPage() {
                 <TextField label="Días Suspendidos" type="number" value={editForm.suspendidoDias} onChange={e => setEditForm({ ...editForm, suspendidoDias: +e.target.value })} size="small" />
                 <TextField select label="Jefatura" value={editForm.jefatura} onChange={e => setEditForm({ ...editForm, jefatura: e.target.value })} size="small">
                   {['DI','UDETRA','UEH','UPRADE','UNASVI'].map(j => <MenuItem key={j} value={j}>{j}</MenuItem>)}
+                </TextField>
+              </Box>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                <TextField select label="Situación" value={editForm.situacion} onChange={e => setEditForm({ ...editForm, situacion: e.target.value })} size="small">
+                  <MenuItem value="">Sin especificar</MenuItem>
+                  {Object.entries(ETAPA_LABEL).map(([k, v]) => <MenuItem key={k} value={k}>{v}</MenuItem>)}
                 </TextField>
               </Box>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
@@ -991,5 +1066,4 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
         </tbody>
       </table>
     </>
-  );
-}
+  )}

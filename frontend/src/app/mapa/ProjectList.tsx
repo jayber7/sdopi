@@ -7,6 +7,7 @@ import { useJefatura } from '@/context/JefaturaContext';
 import { useTheme, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import LinearProgress from '@mui/material/LinearProgress';
 import CircularProgress from '@mui/material/CircularProgress';
 
 interface Props {
@@ -19,8 +20,10 @@ interface Proyecto {
   contratista: string;
   provincia: string | null;
   municipio: string | null;
-  montoModificado: number | null;
+  montoContrato: number;
   activo: boolean;
+  avanceFisico: number;
+  avanceFinanciero: number;
 }
 
 export default function ProjectList({ selected }: Props) {
@@ -55,40 +58,34 @@ export default function ProjectList({ selected }: Props) {
             Sin proyectos en {selected.nombre}
           </Typography>
         ) : (
-          proyectos.map((p) => (
-            <Link
-              key={p.id}
-              href={`/proyectos/${p.id}`}
-              style={{ textDecoration: 'none' }}
-            >
-              <Box
-                sx={{
-                  p: 1.5,
-                  mb: 1,
-                  borderRadius: 2,
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.04)',
-                  transition: 'all 0.12s ease',
-                  '&:hover': {
-                    background: alpha(theme.palette.primary.main, 0.06),
-                    borderColor: alpha(theme.palette.primary.main, 0.12),
-                  },
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8125rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: alpha(theme.palette.primary.light, 0.9) }}>
-                  {p.nombre}
-                </Typography>
-                <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.7) }}>
-                  {p.contratista}
-                </Typography>
-                {p.montoModificado != null && (
-                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mt: 0.3, color: alpha(theme.palette.success.main, 0.8) }}>
-                    Bs {p.montoModificado.toLocaleString('es-BO')}
+          proyectos.map((p) => {
+            const fisico = p.avanceFisico * 100;
+            const financiero = p.avanceFinanciero * 100;
+            return (
+              <Link key={p.id} href={`/proyectos/${p.id}`} style={{ textDecoration: 'none' }}>
+                <Box sx={{ p: 1.5, mb: 1, borderRadius: 2, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)', transition: 'all 0.12s ease', '&:hover': { background: alpha(theme.palette.primary.main, 0.06), borderColor: alpha(theme.palette.primary.main, 0.12) } }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8125rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: alpha(theme.palette.primary.light, 0.9) }}>
+                    {p.nombre}
                   </Typography>
-                )}
-              </Box>
-            </Link>
-          ))
+                  <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.7) }}>{p.contratista}</Typography>
+                  <Box sx={{ display: 'flex', gap: 2, mt: 0.8 }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" sx={{ color: alpha(theme.palette.success.main, 0.8), fontSize: '0.6rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Físico</span><span>{Math.round(fisico)}%</span>
+                      </Typography>
+                      <LinearProgress variant="determinate" value={Math.min(fisico, 100)} sx={{ height: 4, borderRadius: 2, bgcolor: alpha(theme.palette.success.main, 0.15), '& .MuiLinearProgress-bar': { bgcolor: fisico > 80 ? theme.palette.success.main : fisico > 40 ? theme.palette.warning.main : theme.palette.error.main, borderRadius: 2 } }} />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" sx={{ color: alpha(theme.palette.primary.main, 0.8), fontSize: '0.6rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Financiero</span><span>{Math.round(financiero)}%</span>
+                      </Typography>
+                      <LinearProgress variant="determinate" value={Math.min(financiero, 100)} sx={{ height: 4, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.15), '& .MuiLinearProgress-bar': { bgcolor: theme.palette.primary.main, borderRadius: 2 } }} />
+                    </Box>
+                  </Box>
+                </Box>
+              </Link>
+            );
+          })
         )}
       </Box>
     </Box>

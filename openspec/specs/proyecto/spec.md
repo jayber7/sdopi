@@ -1,7 +1,7 @@
 # Proyecto
 
 ## Purpose
-Gestiona los datos contractuales de cada obra: nombre, contrato, montos, fechas, entidades responsables y jefatura. Los proyectos activos aparecen en la lista general; los desactivados se ocultan.
+Gestiona los datos contractuales de cada obra: nombre, contrato, montos, fechas, entidades responsables, jefatura y situación/etapa. Los proyectos activos aparecen en la lista general; los desactivados se ocultan.
 
 ## Requirements
 
@@ -119,6 +119,22 @@ El formulario de proyecto SHALL permitir seleccionar ubicación eligiendo provin
 - **WHEN** el usuario busca un lugar en el campo de búsqueda del mapa
 - **THEN** se muestran resultados de Nominatim
 - **AND** al seleccionar un resultado, el mapa se centra allí
+
+### Requirement: Situación actual del proyecto (EtapaProyecto)
+El sistema SHALL incluir un campo `situacion` de tipo `EtapaProyecto` (enum) que indica la etapa del ciclo de vida del proyecto. NO tiene restricciones de transición — el usuario puede cambiarlo a cualquier valor en cualquier momento.
+
+El enum `EtapaProyecto` soporta 14 valores: `SIN_EJECUCION`, `PREINVERSION`, `INVERSION`, `CAMBIO_PREINVERSION_A_INVERSION`, `INVERSION_PARA_LICITACION`, `EDTP_CONCLUIDO`, `EDTP_CONCLUIDO_ESPERA_INVERSION`, `EN_EJECUCION`, `EN_CIERRE`, `CONCLUIDO`, `CON_ENTREGA_DEFINITIVA`, `CONCILIACION_SALDOS`, `AUDITORIA_EXTERNA`, `SUSPENSION_CONTRATACION`.
+
+#### Scenario: Crear proyecto sin situación
+- **WHEN** se crea un proyecto nuevo
+- **THEN** el campo `situacion` es opcional, default vacío
+- **AND** el dropdown muestra "Sin especificar" como valor por defecto
+
+#### Scenario: Editar situación del proyecto
+- **WHEN** un admin u operador edita un proyecto
+- **THEN** el formulario incluye un Select con los 14 valores del enum
+- **AND** permite cambiar a cualquier valor sin restricciones de secuencia
+- **AND** el detalle del proyecto muestra la situación actual en la cabecera
 
 ### Requirement: Control de Acceso por Rol
 El sistema SHALL restringir las acciones de proyecto según el rol del usuario.

@@ -18,6 +18,7 @@ interface Props {
   selected: Municipio;
   filtroEstado: string;
   busqueda: string;
+  counts: Record<string, number>;
   routeVisible: boolean;
   routeGeo: any;
   routeInfo: { nombre: string; provincia: string };
@@ -33,7 +34,7 @@ function limpiar(t: string) {
   return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-export default function MapaOruro({ selected, filtroEstado, busqueda, routeVisible, routeGeo, routeInfo, onSelect, onToggleRoute }: Props) {
+export default function MapaOruro({ selected, filtroEstado, busqueda, counts, routeVisible, routeGeo, routeInfo, onSelect, onToggleRoute }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const markerLayer = useRef<L.LayerGroup | null>(null);
@@ -152,9 +153,7 @@ export default function MapaOruro({ selected, filtroEstado, busqueda, routeVisib
             <div class="popup-title">${escapeHTML(m.nombre)}</div>
             <div class="popup-muted">${escapeHTML(m.provincia)} &bull; ${escapeHTML(m.unidad)}</div>
             <div class="popup-grid">
-              <div class="popup-box"><strong>${m.proyectos}</strong><span>Proyectos</span></div>
-              <div class="popup-box"><strong>${m.avance}%</strong><span>Avance físico</span></div>
-              <div class="popup-box"><strong>${m.financiero}%</strong><span>Financiero</span></div>
+              <div class="popup-box"><strong>${counts[m.nombre] ?? 0}</strong><span>Proyectos</span></div>
               <div class="popup-box"><strong>${estadoLabel[m.estado]}</strong><span>Estado</span></div>
             </div>
             <button class="popup-action" type="button" data-id="${m.id}">Ver ficha</button>

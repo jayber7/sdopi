@@ -14,6 +14,7 @@ interface Props {
   selected: Municipio;
   filtroEstado: string;
   busqueda: string;
+  counts: Record<string, number>;
   onSelect: (m: Municipio) => void;
   onFilterChange: (v: string) => void;
   onSearchChange: (v: string) => void;
@@ -39,7 +40,7 @@ const dotColor: Record<string, string> = {
   concluido: '#5b9aff',
 };
 
-export default function TerritoryPanel({ selected, filtroEstado, busqueda, onSelect, onFilterChange, onSearchChange }: Props) {
+export default function TerritoryPanel({ selected, filtroEstado, busqueda, counts, onSelect, onFilterChange, onSearchChange }: Props) {
   const theme = useTheme();
   const lista = visibles(filtroEstado, busqueda);
 
@@ -112,7 +113,7 @@ export default function TerritoryPanel({ selected, filtroEstado, busqueda, onSel
               </Typography>
               <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.7) }}>{m.provincia}</Typography>
             </Box>
-            <Typography variant="caption" sx={{ fontWeight: 600, color: alpha(theme.palette.text.secondary, 0.7) }}>{m.avance}%</Typography>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: alpha(theme.palette.text.secondary, 0.7) }}>{counts[m.nombre] ?? 0}</Typography>
           </Box>
         ))}
         {lista.length === 0 && (

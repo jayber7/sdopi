@@ -1,38 +1,21 @@
 ## ADDED Requirements
 
-### Requirement: Selector de etapa en formulario
-El formulario de creación y edición de proyecto SHALL incluir un selector (dropdown) para la etapa actual con los valores: "Estudio", "Inversión", "Ejecución", "Concluido". Solo se mostrarán las etapas válidas según la etapa actual (secuenciales, sin retroceder).
+### Requirement: Selector de situación en formulario
+El formulario de creación y edición de proyecto SHALL incluir un selector (dropdown) para la situación/etapa actual, listando todos los valores de `EtapaProyecto` más una opción "Sin especificar".
 
 #### Scenario: Crear proyecto
-- **WHEN** un operador crea un proyecto
-- **THEN** el campo etapa muestra solo "Estudio" como opción (default)
+- **WHEN** un operador abre el modal de crear proyecto
+- **THEN** el campo situación muestra "Sin especificar" como valor por defecto
+- **AND** el dropdown lista los 14 valores del enum EtapaProyecto
 
-#### Scenario: Editar proyecto en estudio
-- **WHEN** un admin edita un proyecto con `etapaActual="estudio"`
-- **THEN** el dropdown muestra como opciones: "Estudio" (actual), "Inversión" (siguiente)
+#### Scenario: Editar proyecto con situación existente
+- **WHEN** un admin edita un proyecto que tiene `situacion` asignada
+- **THEN** el dropdown muestra el valor actual preseleccionado
+- **AND** permite cambiar a cualquier otro valor
 
-#### Scenario: Editar proyecto en ejecución
-- **WHEN** un admin edita un proyecto con `etapaActual="ejecucion"`
-- **THEN** el dropdown muestra: "Ejecución" (actual), "Concluido" (siguiente)
+### Requirement: Situación en detalle de proyecto
+La cabecera del detalle de proyecto SHALL mostrar la situación actual junto al nombre del proyecto.
 
-### Requirement: Badge de etapa en lista de proyectos
-La lista de proyectos SHALL mostrar un badge/etiqueta con la etapa actual del proyecto (ej: "Estudio", "Ejecución") con un color distintivo para cada etapa.
-
-#### Scenario: Lista con etapa
-- **WHEN** un usuario ve la lista de proyectos
-- **THEN** cada proyecto muestra un badge con su etapa actual
-
-### Requirement: Etapa en detalle de proyecto
-La cabecera del detalle de proyecto SHALL mostrar la etapa actual junto al nombre.
-
-#### Scenario: Detalle de proyecto
-- **WHEN** un usuario abre el detalle de un proyecto
-- **THEN** la cabecera muestra el nombre y la etapa actual
-
-### Requirement: Ocultar botón "+ Nueva" planilla según etapa
-El botón "+ Nueva" para crear planillas CAO SHALL ocultarse si el proyecto no está en etapa "ejecución". La Planilla BASE sí puede crearse en cualquier etapa.
-
-#### Scenario: Proyecto en estudio sin botón CAO
-- **WHEN** un operador ve la sección de planillas de un proyecto en `"estudio"`
-- **THEN** NO se muestra el botón "+ Nueva"
-- **AND** se muestra un mensaje "Las planillas CAO están disponibles cuando el proyecto esté en Ejecución"
+#### Scenario: Detalle de proyecto con situación
+- **WHEN** un usuario abre el detalle de un proyecto con `situacion` asignada
+- **THEN** la cabecera muestra el nombre del proyecto y su situación
