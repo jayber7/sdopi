@@ -88,6 +88,43 @@ export async function searchNominatim(term: string, limit = 5) {
   }
 }
 
+export async function getViasOruro() {
+  const query = `
+[out:json][timeout:90];
+area["name"="Oruro"]->.dept;
+(
+  way["highway"~"motorway|trunk|primary|secondary|tertiary"](area.dept);
+);
+out geom;
+`.trim();
+  try {
+    const r = await fetch(OVERPASS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `data=${encodeURIComponent(query)}`,
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const features = (data.elements || [])
+      .filter((el: any) => el.type === 'way' && el.geometry?.length > 1)
+      .map((way: any) => ({
+        type: 'Feature',
+        properties: {
+          highway: way.tags?.highway || 'unknown',
+          name: way.tags?.name || null,
+          ref: way.tags?.ref || null,
+        },
+        geometry: {
+          type: 'LineString',
+          coordinates: way.geometry.map((p: any) => [p.lon, p.lat]),
+        },
+      }));
+    return { type: 'FeatureCollection', features };
+  } catch {
+    return null;
+  }
+}
+
 export async function getRoute(from: [number, number], to: [number, number]) {
   const params = new URLSearchParams({ overview: 'full', geometries: 'geojson', steps: 'false' });
   const url = `${OSRM_URL}/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?${params}`;

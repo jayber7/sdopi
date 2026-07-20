@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const publicPaths = ['/login'];
+const publicPaths = ['/login', '/'];
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
   const { pathname } = request.nextUrl;
 
   if (publicPaths.includes(pathname)) {
-    if (token) return NextResponse.redirect(new URL('/', request.url));
+    if (token) return NextResponse.redirect(new URL('/mapa', request.url));
     return NextResponse.next();
   }
 
@@ -22,5 +22,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:png|jpg|jpeg|svg|gif|webp|ico)$).*)'],
 };

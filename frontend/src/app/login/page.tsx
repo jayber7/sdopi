@@ -24,7 +24,7 @@ export default function LoginPage() {
     setError('');
     try {
       await login(email, password);
-      router.push('/');
+      router.push('/mapa');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesion');
     }

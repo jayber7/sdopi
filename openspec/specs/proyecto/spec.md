@@ -86,7 +86,7 @@ La interfaz SHALL mostrar el detalle del proyecto con botones de acción en la c
 #### Scenario: Ver detalle del proyecto
 - **WHEN** un usuario navega a /proyectos/:id
 - **THEN** se muestra la cabecera con nombre, contrato, contratista, monto, supervisor y fiscal
-- **AND** se muestran las pestañas General y Planillas
+- **AND** se muestran las pestañas General, Planillas y Dashboard
 
 #### Scenario: Editar desde el detalle
 - **WHEN** un admin u operador hace clic en "Editar proyecto" en la cabecera
@@ -135,6 +135,25 @@ El enum `EtapaProyecto` soporta 14 valores: `SIN_EJECUCION`, `PREINVERSION`, `IN
 - **THEN** el formulario incluye un Select con los 14 valores del enum
 - **AND** permite cambiar a cualquier valor sin restricciones de secuencia
 - **AND** el detalle del proyecto muestra la situación actual en la cabecera
+
+### Requirement: Dashboard de Proyecto
+La pestaña Dashboard SHALL mostrar indicadores clave de avance del proyecto con KPI cards y gráficos de dona (PieChart de recharts).
+
+#### Scenario: KPIs del Dashboard
+- **WHEN** un usuario navega a la pestaña Dashboard de un proyecto
+- **THEN** se muestran los siguientes KPIs: Avance Físico (%), Avance Financiero (Bs ejecutado), Saldo por Ejecutar (Bs), Tiempo (%), Items con avance (N/total), y % Anticipo
+- **AND** el color del Avance Físico varía: verde (>80%), naranja (40-80%), rojo (<40%)
+
+#### Scenario: Gráfico Avance Físico
+- **WHEN** se muestra el dashboard
+- **THEN** se renderiza un PieChart tipo dona con el avance físico: porción azul = `sum(avances.monto)/sum(items.montoOriginal)*100`, porción gris = pendiente
+- **AND** el centro muestra el porcentaje de avance físico
+
+#### Scenario: Gráfico Avance Financiero
+- **WHEN** se muestra el dashboard
+- **THEN** se renderiza un PieChart tipo dona con el avance financiero: porción verde = `anticipoMonto + sum(avances.monto)*(1-anticipoPct/100)`, porción gris = saldo restante
+- **AND** el centro muestra el porcentaje de avance financiero
+- **AND** el avance financiero difiere del físico porque incluye el anticipo como base y descuenta proporcionalmente el % de anticipo de cada desembolso (líquido pagado)
 
 ### Requirement: Control de Acceso por Rol
 El sistema SHALL restringir las acciones de proyecto según el rol del usuario.

@@ -24,16 +24,18 @@ interface Props {
   baseLayer: string;
   polygonsVisible: boolean;
   routeVisible: boolean;
+  viasVisible: boolean;
   onBaseLayerChange: (k: string) => void;
   onPolygonsToggle: () => void;
   onToggleRoute: () => void;
+  onViasToggle: () => void;
   onCenterOruro: () => void;
   onFullscreen: () => void;
 }
 
 export default function MapControls({
-  baseLayer, polygonsVisible, routeVisible,
-  onBaseLayerChange, onPolygonsToggle, onToggleRoute,
+  baseLayer, polygonsVisible, routeVisible, viasVisible,
+  onBaseLayerChange, onPolygonsToggle, onToggleRoute, onViasToggle,
   onCenterOruro, onFullscreen,
 }: Props) {
   const theme = useTheme();
@@ -111,6 +113,22 @@ export default function MapControls({
           />
         }
         label={<Typography sx={{ fontSize: '0.6875rem', color: alpha(theme.palette.text.secondary, 0.6) }}>Polígonos</Typography>}
+        sx={{ m: 0 }}
+      />
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={viasVisible}
+            onChange={onViasToggle}
+            size="small"
+            sx={{
+              color: alpha(theme.palette.text.secondary, 0.3),
+              '&.Mui-checked': { color: alpha(theme.palette.primary.main, 0.7) },
+              '& .MuiSvgIcon-root': { fontSize: 16 },
+            }}
+          />
+        }
+        label={<Typography sx={{ fontSize: '0.6875rem', color: alpha(theme.palette.text.secondary, 0.6) }}>Vías</Typography>}
         sx={{ m: 0 }}
       />
     </Box>

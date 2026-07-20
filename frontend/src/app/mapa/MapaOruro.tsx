@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { municipios, type Municipio, oruroCentro, ciudadOruro, estadoColor, estadoLabel } from '@/lib/municipios';
-import { getMunicipiosPolygons } from '@/lib/osm-services';
+import { getMunicipiosPolygons, getViasOruro } from '@/lib/osm-services';
 import MapControls from './MapControls';
 
 const tileUrls: Record<string, string> = {
@@ -41,12 +41,16 @@ export default function MapaOruro({ selected, filtroEstado, busqueda, counts, ro
   const tileLayer = useRef<L.TileLayer | null>(null);
   const polygonLayer = useRef<L.LayerGroup | null>(null);
   const selectedLayer = useRef<L.LayerGroup | null>(null);
+  const roadLayer = useRef<L.LayerGroup | null>(null);
 
   const [baseLayer, setBaseLayer] = useState('osm');
   const [polygonsVisible, setPolygonsVisible] = useState(true);
   const polygonsVisibleRef = useRef(polygonsVisible);
+  const [viasVisible, setViasVisible] = useState(false);
+  const viasVisibleRef = useRef(viasVisible);
 
   useEffect(() => { polygonsVisibleRef.current = polygonsVisible; }, [polygonsVisible]);
+  useEffect(() => { viasVisibleRef.current = viasVisible; }, [viasVisible]);
 
   const handleFullscreen = useCallback(() => {
     const el = mapInstance.current?.getContainer();
@@ -97,6 +101,30 @@ export default function MapaOruro({ selected, filtroEstado, busqueda, counts, ro
       });
       polygonLayer.current = layer;
       if (!polygonsVisibleRef.current) layer.remove();
+    });
+
+    getViasOruro().then((geojson) => {
+      if (!mapInstance.current || !geojson?.features?.length) return;
+      const layer = L.layerGroup().addTo(mapInstance.current);
+      geojson.features.forEach((f: any) => {
+        const highway = f.properties?.highway || 'unknown';
+        const style: Record<string, { color: string; weight: number; opacity: number }> = {
+          motorway:  { color: '#cf1d1d', weight: 4, opacity: 0.85 },
+          trunk:     { color: '#e08a3a', weight: 3.5, opacity: 0.85 },
+          primary:   { color: '#f0c040', weight: 3, opacity: 0.75 },
+          secondary: { color: '#6ab04c', weight: 2.5, opacity: 0.7 },
+          tertiary:  { color: '#96b6c2', weight: 2, opacity: 0.6 },
+        };
+        const s = style[highway] || { color: '#94a3b8', weight: 1.5, opacity: 0.5 };
+        const name = f.properties?.name || f.properties?.ref || '';
+        L.geoJSON(f, {
+          style: { color: s.color, weight: s.weight, opacity: s.opacity },
+        })
+          .bindTooltip(name, { permanent: false, direction: 'top', className: 'road-tooltip' })
+          .addTo(layer);
+      });
+      roadLayer.current = layer;
+      if (!viasVisibleRef.current) layer.remove();
     });
 
     map.whenReady(() => {
@@ -220,20 +248,27 @@ export default function MapaOruro({ selected, filtroEstado, busqueda, counts, ro
     }
   }, [polygonsVisible]);
 
+  useEffect(() => {
+    const rl = roadLayer.current;
+    if (!rl) return;
+    if (viasVisible) {
+      mapInstance.current && rl.addTo(mapInstance.current);
+    } else {
+      mapInstance.current && rl.remove();
+    }
+  }, [viasVisible]);
+
   return (
     <div className="card overflow-hidden" style={{ minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid var(--color-border-light)' }}>
-        <div className="text-xs" style={{ color: 'var(--color-ink-muted)' }}>
-          <span className="font-medium">{selected.nombre}</span> — {selected.provincia}
-        </div>
-      </div>
       <MapControls
         baseLayer={baseLayer}
         polygonsVisible={polygonsVisible}
         routeVisible={routeVisible}
+        viasVisible={viasVisible}
         onBaseLayerChange={setBaseLayer}
         onPolygonsToggle={() => setPolygonsVisible((v) => !v)}
         onToggleRoute={onToggleRoute}
+        onViasToggle={() => setViasVisible((v) => !v)}
         onCenterOruro={handleCenterOruro}
         onFullscreen={handleFullscreen}
       />
@@ -243,7 +278,7 @@ export default function MapaOruro({ selected, filtroEstado, busqueda, counts, ro
           <div className="route-info-chip">{routeInfo.nombre} · {routeInfo.provincia}</div>
         )}
       </div>
-      <div className="flex gap-3 px-4 py-2" style={{ borderTop: '1px solid var(--color-border-light)' }}>
+      <div className="flex gap-3 px-4 py-2" style={{ borderTop: '1px solid var(--color-border-light)', alignItems: 'center' }}>
         {[
           { label: 'Ejecución normal', color: '#16a34a' },
           { label: 'Con observación', color: '#d8a21d' },
@@ -255,6 +290,23 @@ export default function MapaOruro({ selected, filtroEstado, busqueda, counts, ro
             {l.label}
           </span>
         ))}
+        {viasVisible && (
+          <>
+            <span style={{ width: 1, height: 14, background: 'var(--color-border-light)', display: 'inline-block' }} />
+            {[
+              { label: 'Autopista', color: '#cf1d1d', weight: 4 },
+              { label: 'Troncal', color: '#e08a3a', weight: 3.5 },
+              { label: 'Primaria', color: '#f0c040', weight: 3 },
+              { label: 'Secundaria', color: '#6ab04c', weight: 2.5 },
+              { label: 'Terciaria', color: '#96b6c2', weight: 2 },
+            ].map((l) => (
+              <span key={l.label} className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-ink-muted)' }}>
+                <span style={{ width: 14, height: 3, borderRadius: 2, background: l.color, display: 'inline-block' }} />
+                {l.label}
+              </span>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
