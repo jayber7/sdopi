@@ -135,6 +135,8 @@ model PlanillaCAO {
   fechaInicio    DateTime
   fechaFin       DateTime
   estado         String       @default("borrador")
+  enviadoPor     String?
+  enviadoEn      DateTime?
   proyectoId     Int
   planillaBaseId Int?
   proyecto       Proyecto     @relation(fields: [proyectoId], references: [id], onDelete: Cascade)

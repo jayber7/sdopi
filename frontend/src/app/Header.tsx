@@ -14,6 +14,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Divider from '@mui/material/Divider';
 import Avatar from '@mui/material/Avatar';
+import Badge from '@mui/material/Badge';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 
 import InventoryIcon from '@mui/icons-material/Inventory';
@@ -23,8 +24,9 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import MapIcon from '@mui/icons-material/Map';
-import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 
 const JEFATURA_LABEL: Record<Jefatura, string> = {
   DI: 'Infraestructura',
@@ -38,12 +40,29 @@ const JEFATURAS: Jefatura[] = ['DI', 'UDETRA', 'UEH', 'UPRADE', 'UNASVI'];
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   if (pathname === '/login' || pathname === '/') return null;
 
   const { user, loading, logout } = useAuth();
   const { jefatura: jefaturaActual, setJefatura } = useJefatura();
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [notifAnchor, setNotifAnchor] = useState<null | HTMLElement>(null);
+  const [pendientes, setPendientes] = useState<any[]>([]);
+
+  const isAdmin = user?.role === 'admin';
+  useEffect(() => {
+    if (!isAdmin) return;
+    const fetchPendientes = async () => {
+      try {
+        const r = await fetch('/api/planillas/pendientes', { credentials: 'include' });
+        if (r.ok) setPendientes(await r.json());
+      } catch {}
+    };
+    fetchPendientes();
+    const interval = setInterval(fetchPendientes, 30000);
+    return () => clearInterval(interval);
+  }, [isAdmin]);
 
   const hasAdminAccess = user && hasAny(user, 'usuarios:read', 'roles:read', 'catalogo:read');
 
@@ -108,24 +127,21 @@ export default function Header() {
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, md: 1.5 } }}>
             <Button
-              component="a"
-              href="/mapa"
+              onClick={() => router.push('/mapa')}
               startIcon={<MapIcon />}
               sx={{ color: alpha(theme.palette.text.secondary, 0.6), '&:hover': { color: alpha(theme.palette.primary.light, 0.95) }, fontSize: { xs: '0.7rem', md: '0.8125rem' }, minWidth: 0 }}
             >
               Oruro
             </Button>
             <Button
-              component="a"
-              href="/proyectos"
+              onClick={() => router.push('/proyectos')}
               startIcon={<InventoryIcon />}
               sx={{ color: alpha(theme.palette.text.secondary, 0.6), '&:hover': { color: alpha(theme.palette.primary.light, 0.95) }, fontSize: { xs: '0.7rem', md: '0.8125rem' }, minWidth: 0 }}
             >
               Proyectos
             </Button>
             <Button
-              component="a"
-              href="/dashboard"
+              onClick={() => router.push('/dashboard')}
               startIcon={<DashboardIcon />}
               sx={{ color: alpha(theme.palette.text.secondary, 0.6), '&:hover': { color: alpha(theme.palette.primary.light, 0.95) }, fontSize: { xs: '0.7rem', md: '0.8125rem' }, minWidth: 0 }}
             >
@@ -133,6 +149,31 @@ export default function Header() {
             </Button>
             {!loading && user && (
               <>
+                {isAdmin && (
+                  <>
+                    <IconButton onClick={(e) => setNotifAnchor(e.currentTarget)} size="small" sx={{ mr: 0.5 }}>
+                      <Badge badgeContent={pendientes.length} color="error" invisible={pendientes.length === 0}>
+                        <NotificationsIcon sx={{ fontSize: 20, color: alpha(theme.palette.text.secondary, 0.5) }} />
+                      </Badge>
+                    </IconButton>
+                    <Menu anchorEl={notifAnchor} open={Boolean(notifAnchor)} onClose={() => setNotifAnchor(null)}
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                      slotProps={{ paper: { sx: { maxHeight: 360, width: 320 } } }}>
+                      {pendientes.length === 0 ? (
+                        <MenuItem disabled sx={{ fontSize: '0.8125rem', opacity: 0.5 }}>Sin planillas pendientes</MenuItem>
+                      ) : pendientes.map(p => (
+                        <MenuItem key={p.id} onClick={() => { setNotifAnchor(null); router.push(`/proyectos/${p.proyectoId}`); }}
+                          sx={{ flexDirection: 'column', alignItems: 'flex-start', gap: 0.25, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{p.proyecto?.nombre || 'Proyecto'}</Typography>
+                          <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)' }}>
+                            {p.tipo === 'BASE' ? 'BASE' : `CAO N°${p.numero}`} · {p.periodo} · Enviado por {p.enviadoPor}
+                          </Typography>
+                        </MenuItem>
+                      ))}
+                    </Menu>
+                  </>
+                )}
                 <IconButton
                   onClick={(e) => setAnchorEl(e.currentTarget)}
                   size="small"
@@ -150,25 +191,25 @@ export default function Header() {
                   transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
                   {hasAdminAccess && (
-                    <MenuItem component="a" href="/admin" onClick={() => setAnchorEl(null)}>
+                    <MenuItem onClick={() => { setAnchorEl(null); router.push('/admin'); }}>
                       <AdminPanelSettingsIcon sx={{ fontSize: 16, mr: 1 }} />
                       Panel Admin
                     </MenuItem>
                   )}
                   {can(user, 'usuarios', 'read') && (
-                    <MenuItem component="a" href="/usuarios" onClick={() => setAnchorEl(null)}>
+                    <MenuItem onClick={() => { setAnchorEl(null); router.push('/usuarios'); }}>
                       <PeopleIcon sx={{ fontSize: 16, mr: 1 }} />
                       Usuarios
                     </MenuItem>
                   )}
                   {can(user, 'roles', 'read') && (
-                    <MenuItem component="a" href="/admin/roles" onClick={() => setAnchorEl(null)}>
+                    <MenuItem onClick={() => { setAnchorEl(null); router.push('/admin/roles'); }}>
                       <SecurityIcon sx={{ fontSize: 16, mr: 1 }} />
                       Roles
                     </MenuItem>
                   )}
                   {can(user, 'catalogo', 'read') && (
-                    <MenuItem component="a" href="/admin/catalogo" onClick={() => setAnchorEl(null)}>
+                    <MenuItem onClick={() => { setAnchorEl(null); router.push('/admin/catalogo'); }}>
                       <InventoryIcon sx={{ fontSize: 16, mr: 1 }} />
                       Catálogo
                     </MenuItem>
@@ -184,8 +225,7 @@ export default function Header() {
             )}
             {!loading && !user && (
               <Button
-                component="a"
-                href="/login"
+                onClick={() => router.push('/login')}
                 startIcon={<LoginIcon />}
                 variant="outlined"
                 size="small"

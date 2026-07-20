@@ -60,6 +60,7 @@ interface Avance {
 interface Planilla {
   id: number; tipo: 'BASE' | 'CAO'; numero: number; periodo: string;
   fechaInicio: string; fechaFin: string; estado: string;
+  enviadoPor?: string; enviadoEn?: string;
   proyectoId: number; planillaBaseId: number | null;
   planillaBase: Planilla | null;
   historico: Record<number, { cantidad: number; monto: number }> | null;
@@ -188,6 +189,7 @@ export default function ProyectoDetailPage() {
   const canEVerificar = can(user, 'evidencias', 'verificar');
   const canECreate = can(user, 'evidencias', 'create');
   const isOper = canPUpdate2 || canPCreate || canPUpdate || canECreate;
+  const canEditPlanilla = canPUpdate2 || canPCreate;
   const isAdmin = canAprobar || canPDelete2 || canPDelete;
   const isSupervisor = canEVerificar || canAprobar;
   const isBorrador = planilla?.estado === 'borrador';
@@ -218,6 +220,7 @@ export default function ProyectoDetailPage() {
 
   async function handleAprobarPlanilla() {
     if (!planilla) return;
+    if (!confirm('¿Estás seguro de aprobar todos los items? Esta acción no se puede deshacer.')) return;
     const r = await fetch(`${API}/planillas/${planilla.id}/aprobar`, { method: 'PATCH', credentials: 'include' });
     if (r.ok && proyecto) {
       setPlanilla(await r.json());
@@ -410,7 +413,7 @@ export default function ProyectoDetailPage() {
                     size="small"
                   />
                 ))}
-                {isBorrador && (isOper || isAdmin) && !showForm && (
+                {isBorrador && canPCreate && !showForm && (
                   <Chip icon={<AddIcon />} label="Nueva" onClick={() => setShowForm(true)} variant="outlined" size="small" sx={{ color: 'rgba(0,219,180,0.7)', borderColor: 'rgba(0,219,180,0.3)' }} />
                 )}
                 {isAdmin && !showManualCao && (
@@ -473,6 +476,11 @@ export default function ProyectoDetailPage() {
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>CAO N&deg;{planilla.numero}</Typography>
                     )}
                     <Chip {...estadoChip(planilla.estado)} size="small" variant="filled" />
+                    {planilla.enviadoPor && ['enviado', 'aprobado'].includes(planilla.estado) && (
+                      <Typography variant="caption" sx={{ color: 'rgba(0,219,180,0.6)' }}>
+                        Enviado por: {planilla.enviadoPor}{planilla.enviadoEn ? ` — ${fdate(planilla.enviadoEn)}` : ''}
+                      </Typography>
+                    )}
                     {!isBase && !editHeader && (
                       <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)' }}>
                         {planilla.periodo} ({fdate(planilla.fechaInicio)} — {fdate(planilla.fechaFin)})
@@ -487,13 +495,13 @@ export default function ProyectoDetailPage() {
                         <Button onClick={() => setEditHeader(false)} size="small" variant="text">Cancelar</Button>
                       </Box>
                     )}
-                    {isBorrador && (isOper || isAdmin) && !editHeader && (
+                    {isBorrador && canPUpdate2 && !editHeader && (
                       <Button onClick={startEditHeader} size="small" variant="text" sx={{ minWidth: 0 }}><EditIcon fontSize="small" /></Button>
                     )}
                   </Box>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     {planilla?.tipo === 'CAO' && <EvidenciaStatsButton planillaId={planilla.id} onClick={() => setShowGeneralEvidencia(true)} />}
-                    {isBorrador && (isOper || isAdmin) && (
+                    {isBorrador && canPUpdate2 && !isAdmin && (
                       <Button onClick={async () => { await puccRef.current?.saveAllPending(); await doEndpoint(`/planillas/${planilla.id}/enviar`); }} variant="contained" size="small" startIcon={<SendIcon />}>
                         Enviar
                       </Button>
@@ -507,9 +515,9 @@ export default function ProyectoDetailPage() {
                 {/* Grid / content */}
                 <Box sx={{ overflowX: 'auto' }}>
                   {isBase ? (
-                    <BaseGrid ref={puccRef} planilla={planilla} isAdmin={isAdmin} isOper={isOper} onRefresh={() => loadPlanilla(planilla.id)} proyectoId={proyecto.id} rubros={proyecto.rubros}
+                    <BaseGrid ref={puccRef} planilla={planilla} isAdmin={isAdmin} isOper={canEditPlanilla} onRefresh={() => loadPlanilla(planilla.id)} proyectoId={proyecto.id} rubros={proyecto.rubros}
                       onProjectRefresh={async () => { const r = await fetch(`${API}/proyectos/${proyecto.id}`, { credentials: 'include' }); if (r.ok) setProyecto(await r.json()); }} />
-                  ) : <CAOGrid planilla={planilla} isAdmin={isAdmin} isOper={isOper} isSupervisor={isSupervisor} onRefresh={() => loadPlanilla(planilla.id)} onOpenEvidencia={(id) => setEvidenciaItemId(id)} />}
+                  ) : <CAOGrid planilla={planilla} isAdmin={isAdmin} isOper={canEditPlanilla} isSupervisor={isSupervisor} onRefresh={() => loadPlanilla(planilla.id)} onOpenEvidencia={(id) => setEvidenciaItemId(id)} />}
                 </Box>
               </Card>
             )}
@@ -607,7 +615,7 @@ const BaseGrid = forwardRef(function BaseGrid({ planilla, isAdmin, isOper, onRef
 
   const isBorrador = planilla.estado === 'borrador';
   const isEnviado = planilla.estado === 'enviado';
-  const canEdit = isBorrador && (isAdmin || isOper);
+  const canEdit = isBorrador && isOper;
   const actionCol = (isAdmin && isEnviado) || canEdit ? 1 : 0;
 
   function loadCatalogo() { fetch(`${API}/catalogo/rubros?jefatura=${jefatura}`, { credentials: 'include' }).then(r => r.ok && r.json()).then(setCatRubros); }
@@ -685,15 +693,6 @@ const BaseGrid = forwardRef(function BaseGrid({ planilla, isAdmin, isOper, onRef
       {canEdit && (
         <Box sx={{ display: 'flex', gap: 1, mb: 1.5, px: 2 }}>
           <Button onClick={() => { loadCatalogo(); setShowCat(true); }} size="small" variant="outlined" startIcon={<span>📋</span>}>Importar del catálogo</Button>
-          <Button onClick={() => setEditRubro({ codigo: '', nombre: '' })} size="small" variant="outlined" startIcon={<AddIcon />}>Nuevo Rubro</Button>
-          {editRubro && editRubro.id === undefined && (
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <TextField value={editRubro.codigo} onChange={e => setEditRubro({ ...editRubro, codigo: e.target.value })} size="small" sx={{ width: 100 }} placeholder="Código" />
-              <TextField value={editRubro.nombre} onChange={e => setEditRubro({ ...editRubro, nombre: e.target.value })} size="small" sx={{ width: 200 }} placeholder="Nombre" />
-              <Button onClick={saveRubro} size="small" variant="contained">Agregar</Button>
-              <Button onClick={() => setEditRubro(null)} size="small" variant="text">Cancelar</Button>
-            </Box>
-          )}
         </Box>
       )}
 
@@ -870,8 +869,6 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
 }) {
   const [editCant, setEditCant] = useState<Record<number, number>>({});
   const [savedCant, setSavedCant] = useState<Set<number>>(new Set());
-  const [adding, setAdding] = useState<{ rubroCodigo: string; rubroNombre: string } | null>(null);
-
   const isBorrador = planilla.estado === 'borrador';
   const isEnviado = planilla.estado === 'enviado';
   const actionCol = (isAdmin && isEnviado) || (isBorrador && isOper) ? 1 : 0;
@@ -888,11 +885,6 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
   }
   function unlockCant(av: Avance) { const n = new Set(savedCant); n.delete(av.id); setSavedCant(n); setEditCant(m => ({ ...m, [av.id]: av.cantidad })); }
   async function removeItem(av: Avance) { if (!confirm('Eliminar este item de la planilla?')) return; await fetch(`${API}/planillas/${planilla.id}/items/${av.id}`, { method: 'DELETE', credentials: 'include' }); onRefresh(); }
-  async function addItem() {
-    if (!adding) return;
-    await fetch(`${API}/planillas/${planilla.id}/items`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: [{ itemId: null, cantidad: 0, descripcion: '', unidad: '', precioUnitario: 0, cantidadContrato: 0, rubroCodigo: adding.rubroCodigo, rubroNombre: adding.rubroNombre }] }), credentials: 'include' });
-    setAdding(null); onRefresh();
-  }
   async function handleApprove(av: Avance) { await fetch(`${API}/planillas/${planilla.id}/aprobar-item/${av.id}`, { method: 'PATCH', credentials: 'include' }); onRefresh(); }
   async function handleReject(av: Avance) { await fetch(`${API}/planillas/${planilla.id}/rechazar-item/${av.id}`, { method: 'PATCH', credentials: 'include' }); onRefresh(); }
 
@@ -978,9 +970,6 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
               <Fragment key={g.rubroId ?? g.codigo}>
                 <tr><td colSpan={totalCols} style={{ ...td, background: 'rgba(91,154,255,0.08)', fontWeight: 600, color: 'rgba(150,200,255,0.7)', fontSize: '0.75rem', padding: '4px 12px' }}>
                   {g.codigo} — {g.nombre}
-                  {isBorrador && isOper && planilla.planillaBase?.estado !== 'aprobado' && (
-                    <Button size="small" variant="text" sx={{ ml: 2, fontSize: '0.625rem', minWidth: 0 }} onClick={() => setAdding({ rubroCodigo: g.codigo, rubroNombre: g.nombre })}>+ Item</Button>
-                  )}
                 </td></tr>
                 {g.avances.map((av) => {
                   const ev = (av as any).evidencia;
@@ -1014,7 +1003,7 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
                       <td style={{ ...td, textAlign: 'right' }}>{fmt(h.cantidad)}</td>
                       <td style={{ ...td, textAlign: 'right' }}>{fmt(h.monto)}</td>
                       <td style={{ ...td, textAlign: 'right' }}>
-                        {isBorrador && (isAdmin || isOper) && av.itemId && av.aprobado !== true && !isLockedCAO ? (
+                        {isBorrador && isOper && av.itemId && av.aprobado !== true && !isLockedCAO ? (
                           <input type="number" step="0.01" value={cant} onChange={e => setEditCant(m => ({ ...m, [av.id]: +e.target.value }))} className="input input-sm text-right" style={{ display: 'inline', width: 100 }} />
                         ) : fmt(cant)}
                       </td>
@@ -1036,7 +1025,7 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
                           )}
                         </td>
                       )}
-                      {isBorrador && (isAdmin || isOper) && av.aprobado !== true && (
+                      {isBorrador && isOper && av.aprobado !== true && (
                         <td style={{ ...td, textAlign: 'center' }}>
                           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
                             {isLockedCAO ? (
@@ -1068,20 +1057,7 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
             <td style={{ ...td, textAlign: 'right', fontWeight: 600, color: 'rgba(150,200,255,0.7)' }}>{(grandContrato > 0 ? ((grandAcumulado / grandContrato) * 100).toFixed(1) : 0)}%</td>
             <td colSpan={1 + actionCol}></td>
           </tr>
-          {isBorrador && isOper && (
-            <tr><td colSpan={totalCols} style={td}>
-              {adding ? (
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <TextField value={adding.rubroCodigo} onChange={e => setAdding({ ...adding, rubroCodigo: e.target.value })} size="small" sx={{ width: 100 }} placeholder="Código" />
-                  <TextField value={adding.rubroNombre} onChange={e => setAdding({ ...adding, rubroNombre: e.target.value })} size="small" sx={{ width: 200 }} placeholder="Nombre" />
-                  <Button onClick={addItem} size="small" variant="contained">Agregar</Button>
-                  <Button onClick={() => setAdding(null)} size="small" variant="text">Cancelar</Button>
-                </Box>
-              ) : (
-                <Button onClick={() => setAdding({ rubroCodigo: '', rubroNombre: '' })} size="small" variant="outlined" startIcon={<AddIcon />}>Nuevo Rubro</Button>
-              )}
-            </td></tr>
-          )}
+
         </tbody>
       </table>
     </>

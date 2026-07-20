@@ -204,12 +204,27 @@ export class PlanillasService {
     return this.findOne(id);
   }
 
-  async enviar(id: number) {
+  async enviar(id: number, userId: number) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { nombre: true } });
     await this.prisma.planillaCAO.update({
       where: { id },
-      data: { estado: 'enviado' },
+      data: { estado: 'enviado', enviadoPor: user?.nombre ?? 'Desconocido', enviadoEn: new Date() },
     });
     return this.findOne(id);
+  }
+
+  async pendientes() {
+    const planillas = await this.prisma.planillaCAO.findMany({
+      where: { estado: 'enviado' },
+      select: { id: true, numero: true, periodo: true, enviadoPor: true, enviadoEn: true, proyectoId: true, tipo: true },
+      orderBy: { enviadoEn: 'desc' },
+    });
+    const proyectos = await this.prisma.proyecto.findMany({
+      where: { id: { in: [...new Set(planillas.map(p => p.proyectoId))] } },
+      select: { id: true, nombre: true, jefatura: true },
+    });
+    const proyectoMap = Object.fromEntries(proyectos.map(p => [p.id, p]));
+    return planillas.map(p => ({ ...p, proyecto: proyectoMap[p.proyectoId] || null }));
   }
 
   async aprobarItem(id: number, avanceId: number) {

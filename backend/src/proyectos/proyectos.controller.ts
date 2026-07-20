@@ -30,7 +30,7 @@ export class ProyectosController {
     return this.service.findOne(id);
   }
 
-  @Roles('admin', 'operador')
+  @Roles('admin')
   @Post()
   create(@Body() body: any) {
     const required = ['nombre', 'contratoNro', 'montoContrato', 'ordenProceder', 'fechaConclusion', 'direccion', 'contratista', 'supervisor', 'fiscal', 'latitud', 'longitud'];
@@ -43,7 +43,7 @@ export class ProyectosController {
     return this.service.create(body);
   }
 
-  @Roles('admin', 'operador')
+  @Roles('admin')
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
     if (body.latitud !== undefined || body.longitud !== undefined) {
@@ -54,7 +54,7 @@ export class ProyectosController {
     return this.service.update(id, body);
   }
 
-  @Roles('admin', 'operador')
+  @Roles('admin')
   @Delete(':id')
   softDelete(@Param('id', ParseIntPipe) id: number) {
     return this.service.softDelete(id);

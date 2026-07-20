@@ -79,7 +79,7 @@ export default function AdminCatalogoPage() {
     if (!editItem) return;
     try {
       if (editItem.id) { await apiFetch('PATCH', `${API}/catalogo/items/${editItem.id}`, { numero: editItem.numero, descripcion: editItem.descripcion, unidad: editItem.unidad }); }
-      else { await apiFetch('POST', `${API}/catalogo/items`, { rubroCatalogoId: editItem.rubroCatalogoId, numero: editItem.numero, descripcion: editItem.descripcion, unidad: editItem.unidad }); }
+      else { await apiFetch('POST', `${API}/catalogo/rubros/${editItem.rubroCatalogoId}/items`, { numero: editItem.numero, descripcion: editItem.descripcion, unidad: editItem.unidad }); }
       setEditItem(null); await loadItems(editItem.rubroCatalogoId, true);
     } catch {}
   }
@@ -105,7 +105,7 @@ export default function AdminCatalogoPage() {
           if (r) { rubro = { id: r.id, jefatura, nombre: nombreRubro, _count: { items: 0 } }; setRubros(p => [...p, rubro!]); }
         }
         if (rubro) {
-          await apiFetch('POST', `${API}/catalogo/items`, { rubroCatalogoId: rubro.id, numero: (items[rubro.id]?.length || 0) + 1, descripcion: descripcionItem, unidad: '' });
+          await apiFetch('POST', `${API}/catalogo/rubros/${rubro.id}/items`, { numero: (items[rubro.id]?.length || 0) + 1, descripcion: descripcionItem, unidad: '' });
           ok++;
         } else err++;
       }
@@ -159,15 +159,6 @@ export default function AdminCatalogoPage() {
             </Box>
             {expanded[r.id] && (
               <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                {(editItem && editItem.rubroCatalogoId === r.id && !editItem.id) && (
-                  <Box sx={{ display: 'flex', gap: 1, p: 1, background: 'rgba(255,180,0,0.06)', alignItems: 'center' }}>
-                    <TextField type="number" value={editItem.numero} onChange={e => setEditItem({ ...editItem, numero: +e.target.value })} size="small" sx={{ width: 70 }} placeholder="N°" />
-                    <TextField value={editItem.descripcion} onChange={e => setEditItem({ ...editItem, descripcion: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="Descripción" />
-                    <TextField value={editItem.unidad} onChange={e => setEditItem({ ...editItem, unidad: e.target.value })} size="small" sx={{ width: 80 }} placeholder="Und" />
-                    <Button size="small" variant="contained" onClick={saveItem}>Guardar</Button>
-                    <Button size="small" variant="text" onClick={() => setEditItem(null)}>Cancelar</Button>
-                  </Box>
-                )}
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -204,6 +195,19 @@ export default function AdminCatalogoPage() {
                       </TableRow>
                     )) : (
                       <TableRow><TableCell colSpan={4} sx={{ textAlign: 'center', color: 'rgba(150,200,255,0.4)', py: 3 }}>Sin items</TableCell></TableRow>
+                    )}
+                    {(editItem && editItem.rubroCatalogoId === r.id && !editItem.id) && (
+                      <TableRow>
+                        <TableCell colSpan={4}>
+                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <TextField type="number" value={editItem.numero} onChange={e => setEditItem({ ...editItem, numero: +e.target.value })} size="small" sx={{ width: 70 }} placeholder="N°" />
+                            <TextField value={editItem.descripcion} onChange={e => setEditItem({ ...editItem, descripcion: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="Descripción" />
+                            <TextField value={editItem.unidad} onChange={e => setEditItem({ ...editItem, unidad: e.target.value })} size="small" sx={{ width: 80 }} placeholder="Und" />
+                            <Button size="small" variant="contained" onClick={saveItem}>Guardar</Button>
+                            <Button size="small" variant="text" onClick={() => setEditItem(null)}>Cancelar</Button>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
                     )}
                   </TableBody>
                 </Table>

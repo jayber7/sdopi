@@ -92,6 +92,8 @@ export default function ProyectosPage() {
   const [form, setForm] = useState({ ...INIT_FORM });
   const [search, setSearch] = useState('');
   const [etapaFilter, setEtapaFilter] = useState('');
+  const [provinciaFilter, setProvinciaFilter] = useState('');
+  const [municipioFilter, setMunicipioFilter] = useState('');
   const formRef = useRef(form);
   useEffect(() => { formRef.current = form; }, [form]);
 
@@ -123,6 +125,8 @@ export default function ProyectosPage() {
   const filtered = proyectos.filter(p => {
     if (search && !p.nombre.toLowerCase().includes(search.toLowerCase())) return false;
     if (etapaFilter && p.situacion !== etapaFilter) return false;
+    if (provinciaFilter && p.provincia !== provinciaFilter) return false;
+    if (municipioFilter && p.municipio !== municipioFilter) return false;
     return true;
   });
 
@@ -147,6 +151,7 @@ export default function ProyectosPage() {
     const f = formRef.current;
     const required: (keyof typeof f)[] = ['nombre', 'contratoNro', 'montoContrato', 'ordenProceder', 'fechaConclusion', 'direccion', 'contratista', 'supervisor', 'fiscal'];
     for (const k of required) { if (!f[k] && f[k] !== 0) { alert(`Campo requerido: ${k}`); return; } }
+    if (f.anticipoPct > 100) { alert('El anticipo no puede ser mayor al 100% del monto contratado'); return; }
     if (!f.latitud || !f.longitud) { alert('Debe seleccionar una ubicación en el mapa'); return; }
     const body: any = { ...f, montoContrato: Number(f.montoContrato), anticipoPct: Number(f.anticipoPct), suspendidoDias: Number(f.suspendidoDias), latitud: Number(f.latitud), longitud: Number(f.longitud) };
     const url = modal.edit ? `${API}/proyectos/${modal.edit.id}` : `${API}/proyectos`;
@@ -189,9 +194,17 @@ export default function ProyectosPage() {
         </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'stretch' }}>
-        <TextField placeholder="Buscar por nombre…" value={search} onChange={e => setSearch(e.target.value)} size="small" sx={{ flex: 1, maxWidth: 360 }} />
-        <TextField select label="Etapa" value={etapaFilter} onChange={e => setEtapaFilter(e.target.value)} size="small" sx={{ minWidth: 220 }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'stretch', flexWrap: 'wrap' }}>
+        <TextField placeholder="Buscar por nombre…" value={search} onChange={e => setSearch(e.target.value)} size="small" sx={{ flex: 1, minWidth: 200 }} />
+        <TextField select label="Provincia" value={provinciaFilter} onChange={e => { setProvinciaFilter(e.target.value); setMunicipioFilter(''); }} size="small" sx={{ minWidth: 180 }}>
+          <MenuItem value="">Todas</MenuItem>
+          {provincias.map(p => <MenuItem key={p} value={p}>{p}</MenuItem>)}
+        </TextField>
+        <TextField select label="Municipio" value={municipioFilter} onChange={e => setMunicipioFilter(e.target.value)} size="small" sx={{ minWidth: 180 }}>
+          <MenuItem value="">Todos</MenuItem>
+          {municipios.filter(m => !provinciaFilter || m.provincia === provinciaFilter).map(m => <MenuItem key={m.id} value={m.nombre}>{m.nombre}</MenuItem>)}
+        </TextField>
+        <TextField select label="Etapa" value={etapaFilter} onChange={e => setEtapaFilter(e.target.value)} size="small" sx={{ minWidth: 200 }}>
           <MenuItem value="">Todas las etapas</MenuItem>
           {Object.keys(ETAPA_LABEL).map(k => <MenuItem key={k} value={k}>{ETAPA_LABEL[k]}</MenuItem>)}
         </TextField>

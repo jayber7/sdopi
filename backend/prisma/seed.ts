@@ -13,11 +13,17 @@ const EXTRA_ACTIONS: Record<string, string[]> = {
 };
 
 const ROLE_PERMISSIONS: Record<string, { resource: string; action: string }[]> = {
-  admin: RESOURCES.flatMap(r => [...ACTIONS, ...(EXTRA_ACTIONS[r] ?? [])].map(a => ({ resource: r, action: a }))),
+  admin: RESOURCES.flatMap(r => {
+    const actions = [...ACTIONS, ...(EXTRA_ACTIONS[r] ?? [])];
+    if (r === 'planillas') {
+      const set = new Set(actions);
+      set.delete('create'); set.delete('update');
+      return [...set].map(a => ({ resource: r, action: a }));
+    }
+    return actions.map(a => ({ resource: r, action: a }));
+  }),
   operador: [
     { resource: 'proyectos', action: 'read' },
-    { resource: 'proyectos', action: 'create' },
-    { resource: 'proyectos', action: 'update' },
     { resource: 'planillas', action: 'read' },
     { resource: 'planillas', action: 'create' },
     { resource: 'planillas', action: 'update' },

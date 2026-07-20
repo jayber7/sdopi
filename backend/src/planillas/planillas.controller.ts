@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Param, Query, Body, ParseIntPipe,
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PlanillasService } from './planillas.service';
 
 @UseGuards(JwtAuthGuard)
@@ -20,7 +21,7 @@ export class PlanillasController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('admin', 'operador')
+  @Roles('operador')
   @Post()
   create(@Body() body: { proyectoId: number; numero: number; periodo: string; fechaInicio: string; fechaFin: string; tipo?: 'BASE' | 'CAO'; planillaBaseId?: number }) {
     return this.service.create({
@@ -31,7 +32,7 @@ export class PlanillasController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('admin', 'operador')
+  @Roles('operador')
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() body: { periodo?: string; fechaInicio?: string; fechaFin?: string }) {
     const data: { periodo?: string; fechaInicio?: Date; fechaFin?: Date } = {};
@@ -42,17 +43,24 @@ export class PlanillasController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('admin', 'operador')
+  @Roles('operador')
   @Patch(':id/items')
   updateItems(@Param('id', ParseIntPipe) id: number, @Body() body: { items: any[] }) {
     return this.service.updateItems(id, body.items);
   }
 
   @UseGuards(RolesGuard)
-  @Roles('admin', 'operador')
+  @Roles('operador')
   @Patch(':id/enviar')
-  enviar(@Param('id', ParseIntPipe) id: number) {
-    return this.service.enviar(id);
+  enviar(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: { userId: number }) {
+    return this.service.enviar(id, user.userId);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @Get('pendientes')
+  pendientes() {
+    return this.service.pendientes();
   }
 
   @UseGuards(RolesGuard)
@@ -83,7 +91,7 @@ export class PlanillasController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('admin', 'operador')
+  @Roles('operador')
   @Delete(':id/items/:avanceId')
   removeItem(
     @Param('id', ParseIntPipe) id: number,
@@ -100,7 +108,7 @@ export class PlanillasController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('admin', 'operador')
+  @Roles('operador')
   @Patch(':id/sync-from-items')
   syncFromItems(@Param('id', ParseIntPipe) id: number) {
     return this.service.syncFromItems(id);
