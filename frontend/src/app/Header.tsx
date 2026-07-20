@@ -23,6 +23,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 const JEFATURA_LABEL: Record<Jefatura, string> = {
   DI: 'Infraestructura',
@@ -35,6 +36,9 @@ const JEFATURA_LABEL: Record<Jefatura, string> = {
 const JEFATURAS: Jefatura[] = ['DI', 'UDETRA', 'UEH', 'UPRADE', 'UNASVI'];
 
 export default function Header() {
+  const pathname = usePathname();
+  if (pathname === '/login') return null;
+
   const { user, loading, logout } = useAuth();
   const { jefatura: jefaturaActual, setJefatura } = useJefatura();
   const theme = useTheme();

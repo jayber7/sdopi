@@ -5,6 +5,7 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeToggleProvider } from '@/context/ThemeToggleContext';
 import { JefaturaProvider } from '@/context/JefaturaContext';
+import Header from './Header';
 
 const serif = DM_Serif_Display({
   subsets: ['latin'],
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <JefaturaProvider>
             <ThemeToggleProvider>
               <AuthProvider>
+                <Header />
                 {children}
               </AuthProvider>
             </ThemeToggleProvider>
