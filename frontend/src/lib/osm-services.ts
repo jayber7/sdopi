@@ -92,8 +92,7 @@ export async function searchNominatim(term: string, limit = 5) {
 export async function getViasOruro() {
   const query = `
 [out:json][timeout:90];
-rel["ISO3166-2"="BO-O"];
-map_to_area->.dept;
+area["name"="Oruro"]->.dept;
 (
   way["highway"~"motorway|trunk|primary|secondary|tertiary"](area.dept);
 );
