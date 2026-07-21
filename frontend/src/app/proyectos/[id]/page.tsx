@@ -37,6 +37,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import Autocomplete from '@mui/material/Autocomplete';
 
 const MapPicker = dynamic(() => import('../MapPicker'), { ssr: false });
 
@@ -612,13 +613,31 @@ const BaseGrid = forwardRef(function BaseGrid({ planilla, isAdmin, isOper, onRef
   const [catSearch, setCatSearch] = useState('');
   const [catSel, setCatSel] = useState<Record<number, Set<number>>>({});
   const [catExpanded, setCatExpanded] = useState<Record<number, boolean>>({});
+  const [catItemSearch, setCatItemSearch] = useState('');
+  const [catLoading, setCatLoading] = useState(false);
+  const [nuevoItemUnidad, setNuevoItemUnidad] = useState('');
+  const [nuevoItemRubro, setNuevoItemRubro] = useState<{ id?: number; nombre: string } | null>(null);
 
   const isBorrador = planilla.estado === 'borrador';
   const isEnviado = planilla.estado === 'enviado';
   const canEdit = isBorrador && isOper;
   const actionCol = (isAdmin && isEnviado) || canEdit ? 1 : 0;
 
-  function loadCatalogo() { fetch(`${API}/catalogo/rubros?jefatura=${jefatura}`, { credentials: 'include' }).then(r => r.ok && r.json()).then(setCatRubros); }
+  async function loadCatalogo() {
+    setCatLoading(true);
+    try {
+      const res = await fetch(`${API}/catalogo/rubros?jefatura=${jefatura}`, { credentials: 'include' });
+      if (!res.ok) return;
+      const rubros = await res.json();
+      setCatRubros(rubros);
+      const allItems: Record<number, any[]> = {};
+      await Promise.all(rubros.map(async (r: any) => {
+        const ir = await fetch(`${API}/catalogo/rubros/${r.id}/items`, { credentials: 'include' });
+        if (ir.ok) allItems[r.id] = await ir.json();
+      }));
+      setCatItems(allItems);
+    } finally { setCatLoading(false); }
+  }
   async function loadCatItems(id: number) { if (catItems[id]) return; const r = await fetch(`${API}/catalogo/rubros/${id}/items`, { credentials: 'include' }); if (r.ok) { const data = await r.json(); setCatItems(p => ({ ...p, [id]: data })); } }
   function toggleSel(rubroId: number, itemId: number) { setCatSel(p => { const s = new Set(p[rubroId] || []); s.has(itemId) ? s.delete(itemId) : s.add(itemId); return { ...p, [rubroId]: s }; }); }
   function toggleAll(rubroId: number, items: any[]) { setCatSel(p => { const s = new Set(p[rubroId] || []); items.forEach(i => s.has(i.id) ? s.delete(i.id) : s.add(i.id)); return { ...p, [rubroId]: s }; }); }
@@ -627,6 +646,28 @@ const BaseGrid = forwardRef(function BaseGrid({ planilla, isAdmin, isOper, onRef
     if (!rubros.length) return;
     await apiFetch('POST', `${API}/proyectos/${proyectoId}/importar-items`, { rubros });
     setShowCat(false); setCatSel({}); await onProjectRefresh(); await onRefresh();
+  }
+  async function crearItemDelCatalogo() {
+    if (!catItemSearch.trim() || !nuevoItemRubro) return;
+    let rubroId: number;
+    if (nuevoItemRubro.id) {
+      rubroId = nuevoItemRubro.id;
+    } else {
+      const nr = await apiFetch('POST', `${API}/catalogo/rubros`, { jefatura, nombre: nuevoItemRubro.nombre });
+      if (!nr) return;
+      rubroId = nr.id;
+      setCatRubros(p => [...p, { id: rubroId!, nombre: nuevoItemRubro!.nombre, jefatura, _count: { items: 0 } }]);
+    }
+    const maxNum = catItems[rubroId]?.length ?? 0;
+    const ni = await apiFetch('POST', `${API}/catalogo/rubros/${rubroId}/items`, { numero: maxNum + 1, descripcion: catItemSearch.trim(), unidad: nuevoItemUnidad || '' });
+    if (!ni) return;
+    const rr = await fetch(`${API}/catalogo/rubros/${rubroId}/items`, { credentials: 'include' });
+    if (rr.ok) {
+      const items = await rr.json();
+      setCatItems(p => ({ ...p, [rubroId]: items }));
+    }
+    setCatSel(p => ({ ...p, [rubroId]: new Set([...(p[rubroId] || []), ni.id]) }));
+    setCatItemSearch(''); setNuevoItemUnidad(''); setNuevoItemRubro(null);
   }
   async function apiFetch(method: string, url: string, body?: any) {
     const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body && JSON.stringify(body), credentials: 'include' });
@@ -805,35 +846,88 @@ const BaseGrid = forwardRef(function BaseGrid({ planilla, isAdmin, isOper, onRef
         <Dialog open={showCat} onClose={() => setShowCat(false)} maxWidth="sm" fullWidth>
           <DialogTitle sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontSize: '1rem' }}>Importar del catálogo — DI</DialogTitle>
           <DialogContent>
-            <TextField placeholder="Buscar rubro..." value={catSearch} onChange={e => setCatSearch(e.target.value)} size="small" fullWidth sx={{ mb: 2 }} />
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {catRubros.filter(r => !catSearch || r.nombre.toLowerCase().includes(catSearch.toLowerCase())).map(r => (
-                <Card key={r.id} variant="outlined">
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1, cursor: 'pointer', '&:hover': { background: 'rgba(100,180,255,0.05)' } }}
-                    onClick={() => { loadCatItems(r.id); setCatExpanded(p => ({ ...p, [r.id]: !p[r.id] })); }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{r.nombre}</Typography>
-                    <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.4)' }}>{r._count.items} items {catExpanded[r.id] ? '▴' : '▾'}</Typography>
-                  </Box>
-                  {catExpanded[r.id] && catItems[r.id] && (
-                    <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.06)', px: 2, py: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', py: 0.5, fontSize: '0.75rem', color: 'rgba(150,200,255,0.7)' }}
-                        onClick={() => toggleAll(r.id, catItems[r.id])}>
-                        <Box component="span" sx={{ width: 14, height: 14, borderRadius: 0.5, border: '1px solid rgba(255,255,255,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', bgcolor: (catSel[r.id]?.size || 0) === catItems[r.id].length ? 'rgba(91,154,255,0.5)' : 'transparent' }} />
-                        {catSel[r.id]?.size === catItems[r.id].length ? 'Deseleccionar todo' : 'Seleccionar todo'}
-                      </Box>
-                      {catItems[r.id].map((ci: any) => (
-                        <Box key={ci.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', py: 0.5, '&:hover': { background: 'rgba(100,180,255,0.05)' } }} onClick={() => toggleSel(r.id, ci.id)}>
-                          <input type="checkbox" checked={catSel[r.id]?.has(ci.id) || false} onChange={() => {}} style={{ accentColor: '#5b9aff' }} />
+            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              <TextField placeholder="Buscar rubro..." value={catSearch} onChange={e => setCatSearch(e.target.value)} size="small" sx={{ flex: 1 }} disabled={!!catItemSearch} />
+              <TextField placeholder="Buscar item por descripción..." value={catItemSearch} onChange={e => setCatItemSearch(e.target.value)} size="small" sx={{ flex: 1 }} />
+            </Box>
+
+            {/* Resultados aplanados de búsqueda de items */}
+            {catItemSearch.length >= 3 ? (
+              (() => {
+                const q = catItemSearch.toLowerCase();
+                const flat: { rubroId: number; rubroNombre: string; ci: any }[] = [];
+                for (const r of catRubros) {
+                  for (const ci of catItems[r.id] || []) {
+                    if (ci.descripcion.toLowerCase().includes(q)) {
+                      flat.push({ rubroId: r.id, rubroNombre: r.nombre, ci });
+                    }
+                  }
+                }
+                if (flat.length > 0) {
+                  return (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {flat.map(({ rubroId, rubroNombre, ci }) => (
+                        <Box key={ci.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', py: 0.5, px: 1, '&:hover': { background: 'rgba(100,180,255,0.05)' } }} onClick={() => toggleSel(rubroId, ci.id)}>
+                          <input type="checkbox" checked={catSel[rubroId]?.has(ci.id) || false} onChange={() => {}} style={{ accentColor: '#5b9aff' }} />
                           <Typography variant="body2" sx={{ flex: 1 }}>{ci.descripcion}</Typography>
+                          <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)' }}>{rubroNombre}</Typography>
                           <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.4)' }}>{ci.unidad}</Typography>
                         </Box>
                       ))}
                     </Box>
-                  )}
-                </Card>
-              ))}
-              {catRubros.length === 0 && <Typography sx={{ textAlign: 'center', py: 4, color: 'rgba(150,200,255,0.4)' }}>Cargando…</Typography>}
-            </Box>
+                  );
+                }
+                return (
+                  <Box sx={{ border: '1px dashed rgba(255,180,0,0.3)', borderRadius: 1, p: 2, mt: 1 }}>
+                    <Typography variant="body2" sx={{ mb: 1, color: 'rgba(255,180,0,0.8)' }}>No se encontró "{catItemSearch}" — crear nuevo item</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <TextField label="Descripción" value={catItemSearch} onChange={e => setCatItemSearch(e.target.value)} size="small" fullWidth />
+                      <TextField label="Unidad" value={nuevoItemUnidad} onChange={e => setNuevoItemUnidad(e.target.value)} size="small" placeholder="m, m³, kg, glb..." sx={{ width: 140 }} />
+                      <Autocomplete
+                        freeSolo
+                        options={catRubros.map(r => r.nombre)}
+                        value={nuevoItemRubro?.nombre || ''}
+                        onChange={(_, v) => {
+                          const existing = catRubros.find(r => r.nombre === v);
+                          setNuevoItemRubro(existing ? { id: existing.id, nombre: existing.nombre } : (v ? { nombre: v } : null));
+                        }}
+                        renderInput={(params) => <TextField {...params} label="Rubro" size="small" placeholder="Seleccionar o escribir nuevo..." />}
+                      />
+                      <Button onClick={crearItemDelCatalogo} variant="contained" size="small" disabled={!catItemSearch.trim() || !nuevoItemRubro}>Crear y agregar</Button>
+                    </Box>
+                  </Box>
+                );
+              })()
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {catRubros.filter(r => !catSearch || r.nombre.toLowerCase().includes(catSearch.toLowerCase())).map(r => (
+                  <Card key={r.id} variant="outlined">
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1, cursor: 'pointer', '&:hover': { background: 'rgba(100,180,255,0.05)' } }}
+                      onClick={() => { setCatExpanded(p => ({ ...p, [r.id]: !p[r.id] })); }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{r.nombre}</Typography>
+                      <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.4)' }}>{catItems[r.id]?.length ?? r._count?.items ?? 0} items {catExpanded[r.id] ? '▴' : '▾'}</Typography>
+                    </Box>
+                    {catExpanded[r.id] && catItems[r.id] && (
+                      <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.06)', px: 2, py: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', py: 0.5, fontSize: '0.75rem', color: 'rgba(150,200,255,0.7)' }}
+                          onClick={() => toggleAll(r.id, catItems[r.id])}>
+                          <Box component="span" sx={{ width: 14, height: 14, borderRadius: 0.5, border: '1px solid rgba(255,255,255,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', bgcolor: (catSel[r.id]?.size || 0) === catItems[r.id].length ? 'rgba(91,154,255,0.5)' : 'transparent' }} />
+                          {catSel[r.id]?.size === catItems[r.id].length ? 'Deseleccionar todo' : 'Seleccionar todo'}
+                        </Box>
+                        {catItems[r.id].map((ci: any) => (
+                          <Box key={ci.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', py: 0.5, '&:hover': { background: 'rgba(100,180,255,0.05)' } }} onClick={() => toggleSel(r.id, ci.id)}>
+                            <input type="checkbox" checked={catSel[r.id]?.has(ci.id) || false} onChange={() => {}} style={{ accentColor: '#5b9aff' }} />
+                            <Typography variant="body2" sx={{ flex: 1 }}>{ci.descripcion}</Typography>
+                            <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.4)' }}>{ci.unidad}</Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Card>
+                ))}
+                {catRubros.length === 0 && <Typography sx={{ textAlign: 'center', py: 4, color: 'rgba(150,200,255,0.4)' }}>{catLoading ? 'Cargando…' : 'Sin rubros'}</Typography>}
+              </Box>
+            )}
           </DialogContent>
           <DialogActions>
             <Typography variant="caption" sx={{ flex: 1, ml: 1, color: 'rgba(150,200,255,0.5)' }}>{Object.values(catSel).reduce((a, s) => a + s.size, 0)} items seleccionados</Typography>

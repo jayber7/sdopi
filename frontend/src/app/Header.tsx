@@ -25,8 +25,12 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import MapIcon from '@mui/icons-material/Map';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import UndoIcon from '@mui/icons-material/Undo';
+import SendIcon from '@mui/icons-material/Send';
 
 const JEFATURA_LABEL: Record<Jefatura, string> = {
   DI: 'Infraestructura',
@@ -48,21 +52,42 @@ export default function Header() {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notifAnchor, setNotifAnchor] = useState<null | HTMLElement>(null);
+  const [notificaciones, setNotificaciones] = useState<any[]>([]);
   const [pendientes, setPendientes] = useState<any[]>([]);
 
-  const isAdmin = user?.role === 'admin';
-  useEffect(() => {
-    if (!isAdmin) return;
-    const fetchPendientes = async () => {
-      try {
-        const r = await fetch('/api/planillas/pendientes', { credentials: 'include' });
-        if (r.ok) setPendientes(await r.json());
-      } catch {}
-    };
+  const fetchNotificaciones = useCallback(async () => {
+    try {
+      const r = await fetch('/api/notificaciones', { credentials: 'include' });
+      if (r.ok) setNotificaciones(await r.json());
+    } catch {}
+  }, []);
+
+  const fetchPendientes = useCallback(async () => {
+    try {
+      const r = await fetch('/api/planillas/pendientes', { credentials: 'include' });
+      if (r.ok) setPendientes(await r.json());
+    } catch {}
+  }, []);
+
+  const fetchAdminData = useCallback(() => {
+    fetchNotificaciones();
     fetchPendientes();
-    const interval = setInterval(fetchPendientes, 30000);
+  }, [fetchNotificaciones, fetchPendientes]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchNotificaciones();
+    let interval: ReturnType<typeof setInterval>;
+    if (user.role === 'admin') {
+      fetchAdminData();
+      interval = setInterval(fetchAdminData, 30000);
+    } else {
+      interval = setInterval(fetchNotificaciones, 30000);
+    }
     return () => clearInterval(interval);
-  }, [isAdmin]);
+  }, [user, fetchNotificaciones, fetchAdminData]);
+
+  const totalNoLeidas = notificaciones.length;
 
   const hasAdminAccess = user && hasAny(user, 'usuarios:read', 'roles:read', 'catalogo:read');
 
@@ -149,31 +174,44 @@ export default function Header() {
             </Button>
             {!loading && user && (
               <>
-                {isAdmin && (
-                  <>
-                    <IconButton onClick={(e) => setNotifAnchor(e.currentTarget)} size="small" sx={{ mr: 0.5 }}>
-                      <Badge badgeContent={pendientes.length} color="error" invisible={pendientes.length === 0}>
-                        <NotificationsIcon sx={{ fontSize: 20, color: alpha(theme.palette.text.secondary, 0.5) }} />
-                      </Badge>
-                    </IconButton>
-                    <Menu anchorEl={notifAnchor} open={Boolean(notifAnchor)} onClose={() => setNotifAnchor(null)}
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                      slotProps={{ paper: { sx: { maxHeight: 360, width: 320 } } }}>
-                      {pendientes.length === 0 ? (
-                        <MenuItem disabled sx={{ fontSize: '0.8125rem', opacity: 0.5 }}>Sin planillas pendientes</MenuItem>
-                      ) : pendientes.map(p => (
-                        <MenuItem key={p.id} onClick={() => { setNotifAnchor(null); router.push(`/proyectos/${p.proyectoId}`); }}
-                          sx={{ flexDirection: 'column', alignItems: 'flex-start', gap: 0.25, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{p.proyecto?.nombre || 'Proyecto'}</Typography>
-                          <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)' }}>
-                            {p.tipo === 'BASE' ? 'BASE' : `CAO N°${p.numero}`} · {p.periodo} · Enviado por {p.enviadoPor}
-                          </Typography>
-                        </MenuItem>
-                      ))}
-                    </Menu>
-                  </>
-                )}
+                <IconButton onClick={async (e) => {
+                    setNotifAnchor(e.currentTarget);
+                    if (notificaciones.length) {
+                      try { await fetch('/api/notificaciones/leer-todas', { method: 'PATCH', credentials: 'include' }); } catch {}
+                      fetchNotificaciones();
+                    }
+                  }}
+                  size="small" sx={{ mr: 0.5 }}>
+                  <Badge badgeContent={totalNoLeidas} color="error" invisible={totalNoLeidas === 0}>
+                    <NotificationsIcon sx={{ fontSize: 20, color: alpha(theme.palette.text.secondary, 0.5) }} />
+                  </Badge>
+                </IconButton>
+                <Menu anchorEl={notifAnchor} open={Boolean(notifAnchor)} onClose={() => setNotifAnchor(null)}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  slotProps={{ paper: { sx: { maxHeight: 360, width: 360 } } }}>
+                  {notificaciones.length === 0 ? (
+                    <MenuItem disabled sx={{ fontSize: '0.8125rem', opacity: 0.5 }}>Sin notificaciones</MenuItem>
+                  ) : notificaciones.map(n => {
+                    const iconMap: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+                      planilla_enviada: { icon: <SendIcon sx={{ fontSize: 16 }} />, color: '#4fc3f7', label: 'Planilla enviada' },
+                      planilla_aprobada: { icon: <CheckCircleIcon sx={{ fontSize: 16 }} />, color: '#66bb6a', label: 'Planilla aprobada' },
+                      planilla_devuelta: { icon: <UndoIcon sx={{ fontSize: 16 }} />, color: '#ffa726', label: 'Devuelta a borrador' },
+                      item_rechazado: { icon: <CancelIcon sx={{ fontSize: 16 }} />, color: '#ef5350', label: 'Ítem rechazado' },
+                    };
+                    const cfg = iconMap[n.tipo] || { icon: <NotificationsIcon sx={{ fontSize: 16 }} />, color: '#aaa', label: 'Notificación' };
+                    return (
+                      <MenuItem key={n.id} onClick={() => { setNotifAnchor(null); router.push(`/proyectos/${n.proyectoId}`); }}
+                        sx={{ flexDirection: 'column', alignItems: 'flex-start', gap: 0.25, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ color: cfg.color }}>{cfg.icon}</Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500, color: cfg.color }}>{cfg.label}</Typography>
+                        </Box>
+                        <Typography variant="caption" sx={{ color: 'rgba(180,180,180,0.7)', ml: 3.5 }}>{n.mensaje}</Typography>
+                      </MenuItem>
+                    );
+                  })}
+                </Menu>
                 <IconButton
                   onClick={(e) => setAnchorEl(e.currentTarget)}
                   size="small"

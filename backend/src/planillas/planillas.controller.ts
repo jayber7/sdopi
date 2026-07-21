@@ -66,8 +66,8 @@ export class PlanillasController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Patch(':id/aprobar')
-  aprobarTodos(@Param('id', ParseIntPipe) id: number, @Query('force') force?: string) {
-    return this.service.aprobarTodos(id, force === 'true');
+  aprobarTodos(@Param('id', ParseIntPipe) id: number, @Query('force') force?: string, @CurrentUser() user?: { userId: number }) {
+    return this.service.aprobarTodos(id, force === 'true', user?.userId);
   }
 
   @UseGuards(RolesGuard)
@@ -86,8 +86,9 @@ export class PlanillasController {
   rechazarItem(
     @Param('id', ParseIntPipe) id: number,
     @Param('avanceId', ParseIntPipe) avanceId: number,
+    @CurrentUser() user: { userId: number },
   ) {
-    return this.service.rechazarItem(id, avanceId);
+    return this.service.rechazarItem(id, avanceId, user.userId);
   }
 
   @UseGuards(RolesGuard)
@@ -103,8 +104,8 @@ export class PlanillasController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Patch(':id/revisar')
-  devolverABorrador(@Param('id', ParseIntPipe) id: number) {
-    return this.service.devolverABorrador(id);
+  devolverABorrador(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: { userId: number }) {
+    return this.service.devolverABorrador(id, user.userId);
   }
 
   @UseGuards(RolesGuard)

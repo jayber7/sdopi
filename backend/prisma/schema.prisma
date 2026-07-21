@@ -137,6 +137,7 @@ model PlanillaCAO {
   estado         String       @default("borrador")
   enviadoPor     String?
   enviadoEn      DateTime?
+  enviadoPorUserId Int?
   proyectoId     Int
   planillaBaseId Int?
   proyecto       Proyecto     @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
@@ -146,6 +147,7 @@ model PlanillaCAO {
   evidencias     EvidenciaFotografica[]
 
   multas          Multa[]
+  enviadoPorUser  User?        @relation("PlanillaEnviada", fields: [enviadoPorUserId], references: [id], onDelete: SetNull)
 
   @@unique([planillaBaseId, numero])
 }
@@ -204,6 +206,8 @@ model User {
   updatedAt         DateTime         @updatedAt
   evidencias        EvidenciaFotografica[]
   userPermissions   UserPermission[]
+  notificaciones    Notificacion[]
+  planillasEnviadas PlanillaCAO[]   @relation("PlanillaEnviada")
 }
 
 model EvidenciaFotografica {
@@ -266,6 +270,18 @@ model Multa {
   planillaId  Int
   planilla    PlanillaCAO @relation(fields: [planillaId], references: [id], onDelete: Cascade)
   createdAt   DateTime    @default(now())
+}
+
+model Notificacion {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  tipo       String   // planilla_enviada | item_rechazado | planilla_devuelta | planilla_aprobada
+  mensaje    String
+  planillaId Int
+  proyectoId Int
+  leida      Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DesembolsoProgramado {

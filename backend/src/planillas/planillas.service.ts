@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificacionesService } from '../notificaciones/notificaciones.service';
 
 @Injectable()
 export class PlanillasService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificaciones: NotificacionesService,
+  ) {}
 
   private include = {
     proyecto: true,
@@ -201,6 +205,7 @@ export class PlanillasService {
         }
       }
     }
+
     return this.findOne(id);
   }
 
@@ -208,8 +213,19 @@ export class PlanillasService {
     const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { nombre: true } });
     await this.prisma.planillaCAO.update({
       where: { id },
-      data: { estado: 'enviado', enviadoPor: user?.nombre ?? 'Desconocido', enviadoEn: new Date() },
+      data: { estado: 'enviado', enviadoPor: user?.nombre ?? 'Desconocido', enviadoEn: new Date(), enviadoPorUserId: userId },
     });
+    const planilla = await this.prisma.planillaCAO.findUnique({ where: { id }, select: { numero: true, proyectoId: true } });
+    const admins = await this.prisma.user.findMany({ where: { role: 'admin' }, select: { id: true } });
+    for (const admin of admins) {
+      await this.notificaciones.crear({
+        userId: admin.id,
+        tipo: 'planilla_enviada',
+        mensaje: `${user?.nombre ?? 'Desconocido'} envió la Planilla N°${planilla?.numero}`,
+        planillaId: id,
+        proyectoId: planilla!.proyectoId,
+      });
+    }
     return this.findOne(id);
   }
 
@@ -262,26 +278,48 @@ export class PlanillasService {
     return this.findOne(id);
   }
 
-  async rechazarItem(id: number, avanceId: number) {
+  async rechazarItem(id: number, avanceId: number, adminUserId: number) {
     const avance = await this.prisma.avanceItem.findUnique({ where: { id: avanceId } });
     if (!avance || avance.planillaId !== id) throw new NotFoundException();
     await this.prisma.avanceItem.update({ where: { id: avanceId }, data: { aprobado: false } });
+    const planilla = await this.prisma.planillaCAO.findUnique({ where: { id }, select: { enviadoPorUserId: true, numero: true, proyectoId: true } });
+    const admin = await this.prisma.user.findUnique({ where: { id: adminUserId }, select: { nombre: true } });
+    if (planilla?.enviadoPorUserId && planilla.enviadoPorUserId !== adminUserId) {
+      await this.notificaciones.crear({
+        userId: planilla.enviadoPorUserId,
+        tipo: 'item_rechazado',
+        mensaje: `${admin?.nombre ?? 'Admin'} rechazó un ítem en Planilla N°${planilla.numero}`,
+        planillaId: id,
+        proyectoId: planilla.proyectoId,
+      });
+    }
     return this.findOne(id);
   }
 
-  async devolverABorrador(id: number) {
+  async devolverABorrador(id: number, adminUserId: number) {
     await this.prisma.avanceItem.updateMany({
       where: { planillaId: id, aprobado: false },
       data: { aprobado: null },
     });
-    return this.prisma.planillaCAO.update({
+    const planilla = await this.prisma.planillaCAO.update({
       where: { id },
       data: { estado: 'borrador' },
       include: this.include,
     });
+    const admin = await this.prisma.user.findUnique({ where: { id: adminUserId }, select: { nombre: true } });
+    if (planilla.enviadoPorUserId && planilla.enviadoPorUserId !== adminUserId) {
+      await this.notificaciones.crear({
+        userId: planilla.enviadoPorUserId,
+        tipo: 'planilla_devuelta',
+        mensaje: `${admin?.nombre ?? 'Admin'} devolvió la Planilla N°${planilla.numero} a borrador`,
+        planillaId: id,
+        proyectoId: planilla.proyectoId,
+      });
+    }
+    return planilla;
   }
 
-  async aprobarTodos(id: number, force = false) {
+  async aprobarTodos(id: number, force = false, adminUserId?: number) {
     const skipEvidenceCheck = process.env.SKIP_EVIDENCE_CHECK === 'true';
     if (!force && !skipEvidenceCheck) {
       const itemsSinEvidencia = await this.prisma.avanceItem.findMany({

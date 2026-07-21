@@ -8,8 +8,9 @@ import { PlanillasModule } from './planillas/planillas.module';
 import { EvidenciaModule } from './evidencia/evidencia.module';
 import { DatosComplementariosModule } from './datos-complementarios/datos-complementarios.module';
 import { ReportesModule } from './reportes/reportes.module';
+import { NotificacionesModule } from './notificaciones/notificaciones.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, RbacModule, ProyectosModule, PlanillasModule, EvidenciaModule, DatosComplementariosModule, ReportesModule],
+  imports: [PrismaModule, AuthModule, UsersModule, RbacModule, ProyectosModule, PlanillasModule, EvidenciaModule, DatosComplementariosModule, ReportesModule, NotificacionesModule],
 })
 export class AppModule {}

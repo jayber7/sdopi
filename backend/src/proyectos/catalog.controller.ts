@@ -44,23 +44,43 @@ export class CatalogController {
       });
       if (!cat) continue;
 
-      const codigo = `M${String(rubrosExistentes + idx + 1).padStart(2, '0')}`;
-      const rubro = await this.prisma.rubro.create({
-        data: { codigo, nombre: cat.nombre, proyectoId },
+      const existing = await this.prisma.rubro.findFirst({
+        where: { proyectoId, nombre: cat.nombre },
       });
 
-      if (cat.items.length > 0) {
-        await this.prisma.item.createMany({
-          data: cat.items.map((ci) => ({
-            rubroId: rubro.id,
-            numero: ci.numero,
-            descripcion: ci.descripcion,
-            unidad: ci.unidad,
-            precioUnitario: 0,
-            cantidadContrato: 0,
-            montoOriginal: 0,
-          })),
+      if (existing) {
+        if (cat.items.length > 0) {
+          await this.prisma.item.createMany({
+            data: cat.items.map((ci) => ({
+              rubroId: existing.id,
+              numero: ci.numero,
+              descripcion: ci.descripcion,
+              unidad: ci.unidad,
+              precioUnitario: 0,
+              cantidadContrato: 0,
+              montoOriginal: 0,
+            })),
+          });
+        }
+      } else {
+        const codigo = `M${String(rubrosExistentes + idx + 1).padStart(2, '0')}`;
+        const rubro = await this.prisma.rubro.create({
+          data: { codigo, nombre: cat.nombre, proyectoId },
         });
+
+        if (cat.items.length > 0) {
+          await this.prisma.item.createMany({
+            data: cat.items.map((ci) => ({
+              rubroId: rubro.id,
+              numero: ci.numero,
+              descripcion: ci.descripcion,
+              unidad: ci.unidad,
+              precioUnitario: 0,
+              cantidadContrato: 0,
+              montoOriginal: 0,
+            })),
+          });
+        }
       }
     }
 
