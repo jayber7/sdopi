@@ -212,11 +212,11 @@ export default function MapaOruro({ selected, filtroEstado, busqueda, counts, ro
 
     if (routeVisible && routeGeo) {
       L.geoJSON(routeGeo, {
-        style: { color: '#6b7280', weight: 3, opacity: 0.5, dashArray: '12 8' },
+        style: { color: '#3b82f6', weight: 3.5, opacity: 0.8 },
       }).addTo(sl);
     } else if (routeVisible) {
       L.polyline([ciudadOruro, selected.coords], {
-          color: '#6b7280', weight: 2.5, opacity: 0.5, dashArray: '8 10',
+          color: '#3b82f6', weight: 3, opacity: 0.7, dashArray: '6 4',
       }).addTo(sl);
     }
 

@@ -22,7 +22,7 @@ El sistema SHALL listar solo los proyectos activos, ordenados alfabéticamente p
 
 #### Scenario: Listar proyectos activos
 - **WHEN** un usuario autenticado envía GET /api/proyectos
-- **THEN** se devuelve solo proyectos con `activo: true`
+- **THEN** se devuelve solo proyectos con `activo: true`, ordenados por última modificación descendente (`updatedAt DESC`)
 - **AND** cada proyecto incluye sus rubros con items (numero, descripcion, unidad, precioUnitario, cantidadContrato, montoOriginal)
 
 ### Requirement: Visualización de Detalle
@@ -40,6 +40,8 @@ El sistema SHALL permitir a admin y operador modificar cualquier campo de un pro
 - **WHEN** un admin u operador envía PATCH /api/proyectos/:id con campos actualizados
 - **THEN** el proyecto se actualiza y se devuelve el proyecto completo con rubros y planillas
 - **AND** las fechas se convierten correctamente a DateTime
+- **AND** los campos numéricos (suspendidoDias, montoContrato, anticipoPct, latitud, longitud) usan `|| ''` en el frontend para evitar el warning de React controlled input al escribir 0 o borrar el valor
+- **AND** los inputs tipo number que permiten backspace usan `<input type="text" inputMode="decimal">` para no bloquear la escritura de 0 o valores vacíos temporales
 
 #### Scenario: Editar proyecto inexistente
 - **WHEN** un admin u operador envía PATCH /api/proyectos/:id con un id que no existe

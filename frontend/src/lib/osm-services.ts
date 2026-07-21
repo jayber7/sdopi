@@ -4,8 +4,9 @@ const OSRM_URL = 'https://router.project-osrm.org';
 
 export async function getMunicipiosPolygons() {
   const query = `
-[out:json][timeout:60];
-area["name"="Oruro"]->.dept;
+[out:json][timeout:90];
+rel["ISO3166-2"="BO-O"];
+map_to_area->.dept;
 rel(area.dept)["admin_level"="8"]["name"~"."];
 out body geom;
 `.trim();
@@ -91,7 +92,8 @@ export async function searchNominatim(term: string, limit = 5) {
 export async function getViasOruro() {
   const query = `
 [out:json][timeout:90];
-area["name"="Oruro"]->.dept;
+rel["ISO3166-2"="BO-O"];
+map_to_area->.dept;
 (
   way["highway"~"motorway|trunk|primary|secondary|tertiary"](area.dept);
 );

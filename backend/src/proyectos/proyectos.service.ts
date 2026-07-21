@@ -89,7 +89,7 @@ export class ProyectosService {
           include: { avances: { select: { monto: true } } },
         },
       },
-      orderBy: { nombre: 'asc' },
+      orderBy: { updatedAt: 'desc' },
     });
 
     return proyectos.map(({ planillas, ...p }) => {

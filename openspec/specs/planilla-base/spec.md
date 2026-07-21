@@ -47,6 +47,13 @@ La Planilla Base integra la gestión de rubros e items. Toda la funcionalidad CR
 - **WHEN** la Base está en estado borrador y un admin u operador edita PU o Cant.Contrato en el grid de la Base
 - **THEN** se actualiza el AvanceItem directamente (PATCH /planillas/:id/items)
 
+#### Scenario: Inputs editables visibles en 0
+- **WHEN** PU o Cant.Contrato vale 0 en el grid editable
+- **THEN** el input muestra `placeholder="0"` para que el usuario sepa que es un campo editable
+- **AND** el input tiene fondo azul tenue (`rgba(91,154,255,0.06)`) y borde sutil (`rgba(91,154,255,0.2)`) para distinguirse visualmente de las celdas de solo lectura
+- **AND** el input usa `type="text" inputMode="decimal"` en lugar de `type="number"` para permitir que el usuario borre el valor y escriba 0 sin que React revierta el cambio al estado anterior
+- **AND** el valor se renderiza con `|| ''` para evitar el warning de React controlled input cuando el valor es 0
+
 #### Scenario: Lock después de guardar en Base
 - **WHEN** un operador hace clic en 💾 para guardar un item
 - **THEN** el item se marca como guardado (locked)
