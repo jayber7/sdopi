@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/app/context/AuthContext';
 import { can } from '@/lib/permissions';
@@ -8,7 +8,7 @@ import { useJefatura } from '@/context/JefaturaContext';
 import LlenadoAsistido from './LlenadoAsistido';
 import { mergeParsed } from '@/lib/proyecto-parser';
 import { provincias, municipios } from '@/lib/municipios';
-import { reverseNominatim } from '@/lib/osm-services';
+import { reverseNominatim, searchNominatim } from '@/lib/osm-services';
 import dynamic from 'next/dynamic';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -24,6 +24,7 @@ import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import Autocomplete from '@mui/material/Autocomplete';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Table from '@mui/material/Table';
@@ -96,6 +97,19 @@ export default function ProyectosPage() {
   const [municipioFilter, setMunicipioFilter] = useState('');
   const formRef = useRef(form);
   useEffect(() => { formRef.current = form; }, [form]);
+  const [searchResults, setSearchResults] = useState<{ display: string; lat: number; lon: number }[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const handleSearchInput = useCallback((value: string) => {
+    clearTimeout(searchTimerRef.current);
+    if (value.length < 3) { setSearchResults([]); return; }
+    setSearchLoading(true);
+    searchTimerRef.current = setTimeout(async () => {
+      const res = await searchNominatim(value);
+      setSearchResults(res);
+      setSearchLoading(false);
+    }, 400);
+  }, []);
 
   const canCreate = can(user, 'proyectos', 'create');
   const canEdit = can(user, 'proyectos', 'update');
@@ -330,7 +344,7 @@ export default function ProyectosPage() {
 
       <Dialog open={modal.open} onClose={() => {}} maxWidth="md" fullWidth>
         <DialogTitle sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontSize: '1.125rem' }}>
-          {modal.edit ? 'Editar Proyecto' : 'Nuevo Proyecto'}
+          {modal.edit ? 'Editar Proyecto' : 'Inscripción de Proyecto'}
           <IconButton onClick={() => setModal({ open: false })} size="small" sx={{ position: 'absolute', right: 8, top: 8, color: 'rgba(150,200,255,0.5)' }}>
             <CloseIcon />
           </IconButton>
@@ -340,14 +354,19 @@ export default function ProyectosPage() {
           <TextField label="N° Contrato" value={form.contratoNro} onChange={e => setForm({ ...form, contratoNro: e.target.value })} size="small" fullWidth />
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
             <TextField label="Monto Contrato Bs" type="number" value={form.montoContrato || ''} onChange={e => setForm({ ...form, montoContrato: +e.target.value })} size="small" />
-            <TextField label="% Anticipo" type="number" value={form.anticipoPct} onChange={e => setForm({ ...form, anticipoPct: +e.target.value })} size="small" />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TextField label="% Anticipo" type="number" value={form.anticipoPct} onChange={e => setForm({ ...form, anticipoPct: +e.target.value })} size="small" slotProps={{ htmlInput: { min: 0, max: 100, step: 0.01 } }} sx={{ width: 110 }} />
+              <Typography variant="body2" sx={{ color: 'rgba(150,200,255,0.7)', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
+                = Bs {(Number(form.montoContrato) * (Number(form.anticipoPct) / 100)).toLocaleString('es-BO', { minimumFractionDigits: 2 })}
+              </Typography>
+            </Box>
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
             <TextField label="Orden de Proceder" type="date" value={form.ordenProceder} onChange={e => setForm({ ...form, ordenProceder: e.target.value })} size="small" slotProps={{ inputLabel: { shrink: true } }} />
             <TextField label="Fecha Conclusión" type="date" value={form.fechaConclusion} onChange={e => setForm({ ...form, fechaConclusion: e.target.value })} size="small" slotProps={{ inputLabel: { shrink: true } }} />
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-            <TextField label="Días Suspendidos" type="number" value={form.suspendidoDias} onChange={e => setForm({ ...form, suspendidoDias: +e.target.value })} size="small" />
+            <TextField label="Días Suspendidos" type="number" value={form.suspendidoDias || ''} onChange={e => setForm({ ...form, suspendidoDias: +e.target.value })} size="small" />
             <TextField select label="Jefatura" value={form.jefatura} onChange={e => setForm({ ...form, jefatura: e.target.value })} size="small">
               {['DI','UDETRA','UEH','UPRADE','UNASVI'].map(j => <MenuItem key={j} value={j}>{j}</MenuItem>)}
             </TextField>
@@ -372,6 +391,20 @@ export default function ProyectosPage() {
               {municipios.filter(m => !form.provincia || m.provincia === form.provincia).map(m => <MenuItem key={m.id} value={m.nombre}>{m.nombre}</MenuItem>)}
             </TextField>
           </Box>
+          <Autocomplete freeSolo options={searchResults} loading={searchLoading}
+            getOptionLabel={(o: any) => o.display ?? o}
+            filterOptions={(x) => x}
+            onInputChange={(_, v) => handleSearchInput(v)}
+            onChange={(_, v: any) => {
+              if (!v || !v.lat) return;
+              setForm(prev => ({ ...prev, latitud: String(v.lat), longitud: String(v.lon), direccion: v.display }));
+            }}
+            renderInput={(params) => (
+              <TextField {...params} label="Buscar calle / dirección" size="small"
+                slotProps={{ ...params.slotProps, htmlInput: { ...params.slotProps?.htmlInput as any, style: { fontSize: '0.875rem' } } }}
+                helperText="Escriba un lugar, calle o comunidad para ubicar en el mapa" />
+            )}
+            sx={{ mb: 1 }} />
           <MapPicker lat={form.latitud ? parseFloat(form.latitud) : undefined} lng={form.longitud ? parseFloat(form.longitud) : undefined}
             onChange={(lat, lng) => setForm(prev => ({ ...prev, latitud: String(lat), longitud: String(lng) }))}
             onReverseGeocode={(dir) => setForm(prev => ({ ...prev, direccion: dir }))} />
@@ -384,7 +417,7 @@ export default function ProyectosPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setModal({ open: false })} variant="outlined">Cancelar</Button>
-          <Button onClick={save} variant="contained">{modal.edit ? 'Guardar Cambios' : 'Crear'}</Button>
+          <Button onClick={save} variant="contained">{modal.edit ? 'Guardar Cambios' : 'Registrar'}</Button>
         </DialogActions>
       </Dialog>
     </Box>

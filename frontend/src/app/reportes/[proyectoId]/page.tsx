@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -14,6 +14,8 @@ import Tab from '@mui/material/Tab';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const API = '/api';
 const fmt = (n: number) => n.toLocaleString('es-BO', { minimumFractionDigits: 2 });
@@ -41,7 +43,7 @@ interface CertificadoData {
 interface AnalisisData {
   proyecto: any; tablaFinanciera: AnalisisRow[]; totales: any;
   anticipo: any; desgloseContractual: any; retraso: any;
-  certificado?: CertificadoData;
+  certificado?: CertificadoData; totalCaos?: number;
 }
 interface PlanillaItemRow {
   numero: number; descripcion: string; unidad: string;
@@ -60,10 +62,12 @@ const td = { padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.04
 
 export default function ReportesPage() {
   const params = useParams();
-  const [tab, setTab] = useState<'analisis' | 'planillas' | 'certificado'>('analisis');
+  const { user } = useAuth();
+  const [tab, setTab] = useState<'analisis' | 'certificado' | 'planillas'>('analisis');
   const [analisis, setAnalisis] = useState<AnalisisData | null>(null);
   const [planillas, setPlanillas] = useState<PlanillaData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const [proyectoNombre, setProyectoNombre] = useState('');
   const [hastaCao, setHastaCao] = useState<number | undefined>(() => {
     if (typeof window === 'undefined') return undefined;
@@ -71,6 +75,7 @@ export default function ReportesPage() {
     return hc ? Number(hc) : undefined;
   });
   const [totalCaos, setTotalCaos] = useState(0);
+  const pdfContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const id = params?.proyectoId;
@@ -96,6 +101,39 @@ export default function ReportesPage() {
     setHastaCao(n);
   }
 
+  const handleGeneratePdf = useCallback(async () => {
+    setGeneratingPdf(true);
+    await new Promise(r => setTimeout(r, 100));
+    try {
+      const el = pdfContentRef.current;
+      if (!el) return;
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      const pageW = 297;
+      const pageH = 210;
+      const imgW = pageW;
+      const imgH = canvas.height * imgW / canvas.width;
+      let y = 0;
+      while (y < imgH) {
+        if (y > 0) pdf.addPage();
+        const h = Math.min(imgH - y, pageH);
+        const srcY = y * canvas.width / imgW;
+        const hSrc = h * canvas.width / imgW;
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = hSrc;
+        const ctx = pageCanvas.getContext('2d')!;
+        ctx.drawImage(canvas, 0, srcY, canvas.width, hSrc, 0, 0, canvas.width, hSrc);
+        pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 0, 0, pageW, h);
+        y += pageH;
+      }
+      pdf.save(`reporte-${proyectoNombre.replace(/\s+/g, '_')}.pdf`);
+    } finally {
+      setGeneratingPdf(false);
+    }
+  }, [proyectoNombre]);
+
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}><CircularProgress size={32} sx={{ color: 'rgba(100,180,255,0.5)' }} /></Box>;
 
   return (
@@ -119,7 +157,9 @@ export default function ReportesPage() {
                 <Tab label="Certificado" value="certificado" />
                 <Tab label="Planillas" value="planillas" />
               </Tabs>
-              <Button variant="outlined" size="small" onClick={() => window.print()}>🖨 Imprimir</Button>
+              <Button variant="outlined" size="small" onClick={handleGeneratePdf} disabled={generatingPdf}>
+                {generatingPdf ? 'Generando PDF...' : 'PDF'}
+              </Button>
             </Box>
           </Box>
         </CardContent>
@@ -128,9 +168,213 @@ export default function ReportesPage() {
       {tab === 'analisis' && analisis && <AnalisisReport data={analisis} />}
       {tab === 'certificado' && analisis?.certificado && <CertificadoReport data={analisis} />}
       {tab === 'planillas' && planillas && <PlanillaReport data={planillas} />}
+
+      {/* hidden PDF content - all sections stacked, white bg */}
+      <Box ref={pdfContentRef} sx={{ position: 'absolute', left: -9999, top: 0, width: 1200, bgcolor: '#fff', color: '#000', p: 4, fontFamily: 'Arial, sans-serif' }}>
+        {analisis && <PdfAnalisis data={analisis} user={user} />}
+        {analisis?.certificado && <PdfCertificado data={analisis} user={user} />}
+        {planillas && <PdfPlanilla data={planillas} user={user} />}
+      </Box>
     </Box>
   );
 }
+
+function PdfStamp({ user }: { user?: { nombre?: string } | null }) {
+  return (
+    <Box sx={{ textAlign: 'right', mb: 2, fontSize: '9px', color: '#666' }}>
+      Impreso el {new Date().toLocaleString('es-BO')} por {user?.nombre ?? '—'}
+    </Box>
+  );
+}
+
+function PdfAnalisis({ data, user }: { data: AnalisisData; user?: { nombre?: string } | null }) {
+  const p = data.proyecto;
+  return (
+    <Box sx={{ mb: 4 }}>
+      <PdfStamp user={user} />
+      <Typography sx={{ fontSize: 16, fontWeight: 700, textAlign: 'center', mb: 2 }}>INFORME DE AVANCE — ANÁLISIS FINANCIERO</Typography>
+      <Box sx={{ fontSize: 10, mb: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <div><strong>PROYECTO:</strong> {p.nombre}</div>
+        <div><strong>CONTRATO N°:</strong> {p.contratoNro} | <strong>CONTRATISTA:</strong> {p.contratista}</div>
+        <div><strong>SUPERVISIÓN:</strong> {p.supervisor} | <strong>FISCALIZACIÓN:</strong> {p.fiscal}</div>
+        <div><strong>MONTO CONTRATO:</strong> Bs {fmt(p.montoContrato)} | <strong>ANTICIPO:</strong> {data.anticipo.porcentaje}% — Bs {fmt(data.anticipo.monto)}</div>
+        <div><strong>ORDEN DE PROCEDER:</strong> {fdate(p.ordenProceder)} | <strong>FECHA CONCLUSIÓN:</strong> {fdate(p.fechaConclusion)}</div>
+      </Box>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 8, marginBottom: 16 }}>
+        <thead>
+          <tr style={{ background: '#2563eb', color: '#fff' }}>
+            <th style={{ padding: 4, textAlign: 'center' }}>CAO</th>
+            <th style={{ padding: 4, textAlign: 'right' }}>Desembolso (Bs)</th>
+            <th style={{ padding: 4, textAlign: 'right' }}>Desc. Anticipo</th>
+            <th style={{ padding: 4, textAlign: 'right' }}>Líquido Pagado</th>
+            <th style={{ padding: 4, textAlign: 'right' }}>Saldo x Ejecutar</th>
+            <th style={{ padding: 4, textAlign: 'right' }}>Av. Físico %</th>
+            <th style={{ padding: 4, textAlign: 'right' }}>Av. Financiero %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.tablaFinanciera.map(r => (
+            <tr key={r.numero} style={{ background: r.numero % 2 === 0 ? '#f1f5f9' : '#fff' }}>
+              <td style={{ padding: 3, textAlign: 'center' }}>{r.numero === 0 ? 'ANTICIPO' : `CAO N°${r.numero}`}</td>
+              <td style={{ padding: 3, textAlign: 'right' }}>{fmt(r.desembolsoEfectuado)}</td>
+              <td style={{ padding: 3, textAlign: 'right' }}>{fmt(r.descuentoAnticipo)}</td>
+              <td style={{ padding: 3, textAlign: 'right' }}>{fmt(r.liquidoPagado)}</td>
+              <td style={{ padding: 3, textAlign: 'right' }}>{fmt(r.saldoPorEjecutar)}</td>
+              <td style={{ padding: 3, textAlign: 'right' }}>{pct(r.avanceFisico)}</td>
+              <td style={{ padding: 3, textAlign: 'right' }}>{pct(r.avanceFinanciero)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr style={{ fontWeight: 700, background: '#1e293b', color: '#fff' }}>
+            <td style={{ padding: 4 }}>TOTALES</td>
+            <td style={{ padding: 4, textAlign: 'right' }}>{fmt(data.totales.desembolsoEfectuado)}</td>
+            <td style={{ padding: 4, textAlign: 'right' }}>{fmt(data.totales.descuentoAnticipo)}</td>
+            <td style={{ padding: 4, textAlign: 'right' }}>{fmt(data.totales.liquidoPagado)}</td>
+            <td style={{ padding: 4, textAlign: 'right' }}>{fmt(data.totales.saldoPorEjecutar)}</td>
+            <td style={{ padding: 4, textAlign: 'right' }}>{pct(data.totales.avanceFisico)}</td>
+            <td style={{ padding: 4, textAlign: 'right' }}>{pct(data.totales.avanceFinanciero)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, fontSize: 10 }}>
+        <Box sx={{ flex: 1, textAlign: 'center', p: 1, border: '1px solid #ddd', borderRadius: 1 }}>
+          <div><strong>Avance Físico Total</strong></div>
+          <div style={{ fontSize: 18, color: '#2563eb' }}>{pct(data.totales.avanceFisico)}</div>
+          <div style={{ color: '#666' }}>Retraso: {pct(data.retraso.fisico)}</div>
+        </Box>
+        <Box sx={{ flex: 1, textAlign: 'center', p: 1, border: '1px solid #ddd', borderRadius: 1 }}>
+          <div><strong>Avance Financiero Total</strong></div>
+          <div style={{ fontSize: 18, color: '#2563eb' }}>{pct(data.totales.avanceFinanciero)}</div>
+          <div style={{ color: '#666' }}>Retraso: {pct(data.retraso.financiero)}</div>
+        </Box>
+        <Box sx={{ flex: 1, textAlign: 'center', p: 1, border: '1px solid #ddd', borderRadius: 1 }}>
+          <div><strong>Saldo por Pagar</strong></div>
+          <div style={{ fontSize: 18, color: '#2563eb' }}>Bs {fmt(data.totales.saldoPorEjecutar)}</div>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+function PdfCertificado({ data, user }: { data: AnalisisData; user?: { nombre?: string } | null }) {
+  const c = data.certificado!; const p = data.proyecto;
+  const certTitle = `CERTIFICADO N° ${data.tablaFinanciera[data.tablaFinanciera.length - 1]?.numero ?? ''}`;
+  const nr = (n: number) => `F-${String(n).padStart(2, '0')}`;
+  const rows = [
+    { n: 1, label: 'EJECUTADO ACUMULADO ANTERIOR', anterior: c.ejecutadoAcumuladoAnterior },
+    { n: 2, label: 'EJECUTADO PRESENTE PERÍODO', presente: c.ejecutadoPresentePeriodo },
+    { n: 3, label: 'EJECUTADO ACUMULADO A LA FECHA (1+2)', acumulado: c.ejecutadoAcumuladoALaFecha, bold: true },
+    { n: 4, label: 'DESCUENTO ANTICIPO ACUMULADO ANTERIOR', anterior: c.descuentoAnticipoAcumuladoAnterior },
+    { n: 5, label: 'INTERÉS SEGÚN CONTRATO', pct: true },
+    { n: 6, label: 'DESCUENTO ANTICIPO PRESENTE PERÍODO', presente: c.descuentoAnticipoPresentePeriodo },
+    { n: 7, label: 'DESCUENTO ANTICIPO ACUMULADO A LA FECHA (4+6)', acumulado: c.descuentoAnticipoAcumuladoALaFecha, bold: true },
+    { n: 8, label: 'MULTA ACUMULADO ANTERIOR', anterior: c.multaAnterior },
+    { n: 9, label: 'MULTA PRESENTE PERÍODO', presente: c.multaPresentePeriodo },
+    { n: 10, label: 'MULTA ACUMULADO A LA FECHA (8+9)', acumulado: c.multaAcumuladoALaFecha, bold: true },
+    { n: 11, label: 'TOTAL DEDUCCIONES (7+10)', acumulado: c.totalDeducciones, bold: true },
+    { n: 12, label: 'LÍQUIDO PAGADO ACUMULADO ANTERIOR', anterior: c.liquidoPagadoAcumuladoAnterior },
+    { n: 13, label: 'LÍQUIDO PAGADO ACUMULADO A LA FECHA', acumulado: c.liquidoPagadoAcumuladoALaFecha },
+    { n: 14, label: 'LÍQUIDO PAGABLE PLANILLA ACTUAL', presente: c.liquidoPagablePlanillaActual },
+    { n: 15, label: 'TOTAL LÍQUIDO PAGADO ACUMULADO A LA FECHA (12+14)', acumulado: c.totalLiquidoPagadoAcumuladoALaFecha, bold: true },
+    { n: 16, label: 'MONTO ACUMULADO CAOs A LA FECHA (3)', acumulado: c.montoAcumuladoCaosALaFecha, bold: true },
+    { n: 17, label: 'SALDO POR RESTITUIR ANTICIPO', acumulado: c.saldoPorRestituirAnticipo },
+    { n: 18, label: 'SALDO EFECTIVO POR PAGAR', acumulado: c.saldoEfectivoPorPagar, bold: true },
+  ];
+  return (
+    <Box sx={{ mb: 4, fontSize: 10 }}>
+      <PdfStamp user={user} />
+      <Typography sx={{ fontSize: 14, fontWeight: 700, textAlign: 'center', mb: 2 }}>PLANILLA DE ANÁLISIS — {certTitle}</Typography>
+      <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <div><strong>PROYECTO:</strong> {p.nombre}</div>
+        <div><strong>CONTRATO N°:</strong> {p.contratoNro} | <strong>CONTRATISTA:</strong> {p.contratista}</div>
+        <div><strong>SUPERVISIÓN:</strong> {p.supervisor} | <strong>FISCALIZACIÓN:</strong> {p.fiscal}</div>
+        <div><strong>MONTO CONTRATO:</strong> Bs {fmt(p.montoContrato)} | <strong>ANTICIPO:</strong> {c.interesSegunContrato}% — Bs {fmt(p.anticipoMonto ?? 0)}</div>
+      </Box>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 8 }}>
+        <thead>
+          <tr style={{ background: '#2563eb', color: '#fff' }}>
+            <th style={{ padding: 4, width: 30 }}>N°</th>
+            <th style={{ padding: 4 }}>Línea</th>
+            <th style={{ padding: 4, textAlign: 'right' }}>Anterior (Bs)</th>
+            <th style={{ padding: 4, textAlign: 'right' }}>Presente (Bs)</th>
+            <th style={{ padding: 4, textAlign: 'right' }}>Acumulado (Bs)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.n} style={{ fontWeight: row.bold ? 700 : 400, background: row.n % 2 === 0 ? '#f1f5f9' : '#fff' }}>
+              <td style={{ padding: 3, textAlign: 'center' }}>{nr(row.n)}</td>
+              <td style={{ padding: 3 }}>{row.label}</td>
+              <td style={{ padding: 3, textAlign: 'right' }}>{row.anterior !== undefined ? fmt(row.anterior) : row.pct ? c.interesSegunContrato + '%' : '—'}</td>
+              <td style={{ padding: 3, textAlign: 'right' }}>{row.presente !== undefined ? fmt(row.presente) : '—'}</td>
+              <td style={{ padding: 3, textAlign: 'right' }}>{row.acumulado !== undefined ? fmt(row.acumulado) : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Box>
+  );
+}
+
+function PdfPlanilla({ data, user }: { data: PlanillaData; user?: { nombre?: string } | null }) {
+  const caos = data.rubros.length > 0 && data.rubros[0].items.length > 0 ? data.rubros[0].items[0].caos.map(c => c.numero) : [];
+  return (
+    <Box sx={{ fontSize: 10 }}>
+      <PdfStamp user={user} />
+      <Typography sx={{ fontSize: 14, fontWeight: 700, textAlign: 'center', mb: 2 }}>PLANILLA DE AVANCE DE OBRA — DETALLE POR ITEM</Typography>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 7 }}>
+        <thead>
+          <tr>
+            <th style={{ padding: 3, background: '#2563eb', color: '#fff', textAlign: 'center' }} rowSpan={2}>Item</th>
+            <th style={{ padding: 3, background: '#2563eb', color: '#fff' }} rowSpan={2}>Descripción</th>
+            <th style={{ padding: 3, background: '#2563eb', color: '#fff' }} rowSpan={2}>Und</th>
+            <th style={{ padding: 3, background: '#2563eb', color: '#fff', textAlign: 'right' }} rowSpan={2}>P.Unit.</th>
+            <th style={{ padding: 3, background: '#2563eb', color: '#fff', textAlign: 'right' }} rowSpan={2}>Cant.Cont.</th>
+            <th style={{ padding: 3, background: '#2563eb', color: '#fff', textAlign: 'right' }} rowSpan={2}>M.Orig.</th>
+            {caos.map(n => <th key={n} colSpan={2} style={{ padding: 3, background: '#2563eb', color: '#fff', textAlign: 'center' }}>CAO N°{n}</th>)}
+            <th colSpan={2} style={{ padding: 3, background: '#2563eb', color: '#fff', textAlign: 'right' }}>Acumulado</th>
+            <th style={{ padding: 3, background: '#2563eb', color: '#fff', textAlign: 'right' }} rowSpan={2}>M.Falt.</th>
+            <th style={{ padding: 3, background: '#2563eb', color: '#fff', textAlign: 'right' }} rowSpan={2}>%</th>
+          </tr>
+          <tr>
+            {caos.map(n => <React.Fragment key={n}><th style={{ padding: 2, background: '#1e293b', color: '#fff', textAlign: 'right' }}>Cant</th><th style={{ padding: 2, background: '#1e293b', color: '#fff', textAlign: 'right' }}>Monto</th></React.Fragment>)}
+            <th style={{ padding: 2, background: '#1e293b', color: '#fff', textAlign: 'right' }}>Cant</th>
+            <th style={{ padding: 2, background: '#1e293b', color: '#fff', textAlign: 'right' }}>Monto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.rubros.map((rubro) => (
+            <React.Fragment key={rubro.rubroCodigo}>
+              <tr><td colSpan={99} style={{ padding: 2, background: '#e2e8f0', fontWeight: 700, fontSize: 8 }}>{rubro.rubroCodigo} — {rubro.rubroNombre}</td></tr>
+              {rubro.items.map((item) => (
+                <tr key={item.numero} style={{ background: item.numero % 2 === 0 ? '#f8fafc' : '#fff' }}>
+                  <td style={{ padding: 2, textAlign: 'center' }}>{item.numero}</td>
+                  <td style={{ padding: 2 }}>{item.descripcion}</td>
+                  <td style={{ padding: 2, textAlign: 'center' }}>{item.unidad}</td>
+                  <td style={{ padding: 2, textAlign: 'right' }}>{fmt(item.precioUnitario)}</td>
+                  <td style={{ padding: 2, textAlign: 'right' }}>{fmt(item.cantidadContrato)}</td>
+                  <td style={{ padding: 2, textAlign: 'right' }}>{fmt(item.montoOriginal)}</td>
+                  {caos.map(n => { const c = item.caos.find(c => c.numero === n); return <React.Fragment key={n}><td style={{ padding: 2, textAlign: 'right' }}>{c ? fmt(c.cantidad) : '—'}</td><td style={{ padding: 2, textAlign: 'right' }}>{c ? fmt(c.monto) : '—'}</td></React.Fragment>; })}
+                  <td style={{ padding: 2, textAlign: 'right', fontWeight: 600 }}>{fmt(item.acumulado.cantidad)}</td>
+                  <td style={{ padding: 2, textAlign: 'right', fontWeight: 600 }}>{fmt(item.acumulado.monto)}</td>
+                  <td style={{ padding: 2, textAlign: 'right' }}>{fmt(item.montoFaltante)}</td>
+                  <td style={{ padding: 2, textAlign: 'right' }}>{pct(item.pctCantidad)}</td>
+                </tr>
+              ))}
+              <tr style={{ fontWeight: 700, background: '#e2e8f0' }}><td colSpan={5} style={{ padding: 2, textAlign: 'right' }}>Subtotal {rubro.rubroCodigo}</td>
+                <td style={{ padding: 2, textAlign: 'right' }}>{fmt(rubro.subtotal)}</td>
+                <td colSpan={caos.length * 2 + 5}></td>
+              </tr>
+            </React.Fragment>
+          ))}
+        </tbody>
+      </table>
+    </Box>
+  );
+}
+
+/* ── On-screen components (dark theme, unchanged) ── */
 
 function AnalisisReport({ data }: { data: AnalisisData }) {
   const p = data.proyecto;

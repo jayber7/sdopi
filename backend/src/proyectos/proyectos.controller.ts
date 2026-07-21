@@ -3,7 +3,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ProyectosService } from './proyectos.service';
-import { Jefatura } from '@prisma/client';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('proyectos')
@@ -16,12 +15,12 @@ export class ProyectosController {
   }
 
   @Get()
-  findAll(@Query('municipio') municipio?: string, @Query('provincia') provincia?: string, @Query('jefatura') jefatura?: Jefatura) {
+  findAll(@Query('municipio') municipio?: string, @Query('provincia') provincia?: string, @Query('jefatura') jefatura?: string) {
     return this.service.findAll(municipio, provincia, jefatura);
   }
 
   @Get('contar-por-municipio')
-  contarPorMunicipio(@Query('jefatura') jefatura?: Jefatura) {
+  contarPorMunicipio(@Query('jefatura') jefatura?: string) {
     return this.service.contarPorMunicipio(jefatura);
   }
 

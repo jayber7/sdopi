@@ -551,7 +551,7 @@ export default function ProyectoDetailPage() {
                 <TextField label="Fecha Conclusión" type="date" value={editForm.fechaConclusion} onChange={e => setEditForm({ ...editForm, fechaConclusion: e.target.value })} size="small" slotProps={{ inputLabel: { shrink: true } }} />
               </Box>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                <TextField label="Días Suspendidos" type="number" value={editForm.suspendidoDias} onChange={e => setEditForm({ ...editForm, suspendidoDias: +e.target.value })} size="small" />
+                <TextField label="Días Suspendidos" type="number" value={editForm.suspendidoDias || ''} onChange={e => setEditForm({ ...editForm, suspendidoDias: +e.target.value })} size="small" />
                 <TextField select label="Jefatura" value={editForm.jefatura} onChange={e => setEditForm({ ...editForm, jefatura: e.target.value })} size="small">
                   {['DI','UDETRA','UEH','UPRADE','UNASVI'].map(j => <MenuItem key={j} value={j}>{j}</MenuItem>)}
                 </TextField>
@@ -787,12 +787,12 @@ const BaseGrid = forwardRef(function BaseGrid({ planilla, isAdmin, isOper, onRef
                       <td style={{ ...td, padding: '8px 4px' }}>{av.unidad ?? av.item?.unidad ?? ''}</td>
                       <td style={{ ...td, textAlign: 'right' }}>
                         {canEdit && av.aprobado !== true && !isLocked
-                          ? <input type="number" step="0.01" value={pu} onChange={e => setEditPU(m => ({ ...m, [av.id]: +e.target.value }))} className="input input-sm text-right" style={{ display: 'inline', width: 80 }} />
+                          ? <input type="text" inputMode="decimal" placeholder="0" value={pu || ''} onChange={e => setEditPU(m => ({ ...m, [av.id]: +e.target.value }))} className="input input-sm text-right" style={{ display: 'inline', width: 80, background: 'rgba(91,154,255,0.06)', border: '1px solid rgba(91,154,255,0.2)', borderRadius: 4, padding: '4px 6px' }} />
                           : fmt(pu)}
                       </td>
                       <td style={{ ...td, textAlign: 'right' }}>
                         {canEdit && av.aprobado !== true && !isLocked
-                          ? <input type="number" step="0.01" value={cc} onChange={e => setEditCC(m => ({ ...m, [av.id]: +e.target.value }))} className="input input-sm text-right" style={{ display: 'inline', width: 80 }} />
+                          ? <input type="text" inputMode="decimal" placeholder="0" value={cc || ''} onChange={e => setEditCC(m => ({ ...m, [av.id]: +e.target.value }))} className="input input-sm text-right" style={{ display: 'inline', width: 80, background: 'rgba(91,154,255,0.06)', border: '1px solid rgba(91,154,255,0.2)', borderRadius: 4, padding: '4px 6px' }} />
                           : fmt(cc)}
                       </td>
                       <td style={{ ...td, textAlign: 'right' }}>{fmt(mo)}</td>
@@ -974,6 +974,8 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
 
   async function saveCant(av: Avance) {
     const c = editCant[av.id]; if (c === undefined) return;
+    const maxCant = Math.max(0, cd(av).cc - hist(av).cantidad);
+    if (c > maxCant) { alert(`La cantidad supera el saldo disponible (${fmt(maxCant)}). Avance acumulado no puede exceder 100%.`); return; }
     await fetch(`${API}/planillas/${planilla.id}/items`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: [{ avanceId: av.id, itemId: av.itemId, cantidad: c }] }), credentials: 'include' });
     setEditCant((m) => { const n = { ...m }; delete n[av.id]; return n }); setSavedCant(prev => new Set([...prev, av.id])); onRefresh();
   }
@@ -1097,8 +1099,8 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
                       <td style={{ ...td, textAlign: 'right' }}>{fmt(h.cantidad)}</td>
                       <td style={{ ...td, textAlign: 'right' }}>{fmt(h.monto)}</td>
                       <td style={{ ...td, textAlign: 'right' }}>
-                        {isBorrador && isOper && av.itemId && av.aprobado !== true && !isLockedCAO ? (
-                          <input type="number" step="0.01" value={cant} onChange={e => setEditCant(m => ({ ...m, [av.id]: +e.target.value }))} className="input input-sm text-right" style={{ display: 'inline', width: 100 }} />
+                        {isBorrador && isOper && av.itemId && av.aprobado !== true && !isLockedCAO && h.cantidad < c.cc ? (
+                          <input type="text" inputMode="decimal" placeholder="0" min={0} max={Math.max(0, c.cc - h.cantidad)} value={cant || ''} onChange={e => setEditCant(m => ({ ...m, [av.id]: +e.target.value }))} className="input input-sm text-right" style={{ display: 'inline', width: 100, background: 'rgba(91,154,255,0.06)', border: '1px solid rgba(91,154,255,0.2)', borderRadius: 4, padding: '4px 6px' }} />
                         ) : fmt(cant)}
                       </td>
                       <td style={{ ...td, textAlign: 'right' }}>{fmt(montoPresente)}</td>

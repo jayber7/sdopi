@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Jefatura } from '@prisma/client';
 
 @Injectable()
 export class ProyectosService {
@@ -73,13 +72,13 @@ export class ProyectosService {
     };
   }
 
-  async findAll(municipio?: string, provincia?: string, jefatura?: Jefatura) {
+  async findAll(municipio?: string, provincia?: string, jefatura?: string) {
     const proyectos = await this.prisma.proyecto.findMany({
       where: {
         activo: true,
         ...(municipio && { municipio }),
         ...(provincia && { provincia }),
-        ...(jefatura && { jefatura }),
+        ...(jefatura && { jefatura: jefatura as any }),
       },
       include: {
         rubros: {
@@ -120,13 +119,13 @@ export class ProyectosService {
     });
   }
 
-  contarPorMunicipio(jefatura?: Jefatura) {
+  contarPorMunicipio(jefatura?: string) {
     return this.prisma.proyecto.groupBy({
       by: ['municipio'],
       where: {
         activo: true,
         municipio: { not: null },
-        ...(jefatura && { jefatura }),
+        ...(jefatura && { jefatura: jefatura as any }),
       },
       _count: { municipio: true },
     });
