@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { municipios, type Municipio, oruroCentro, ciudadOruro, estadoColor, estadoLabel } from '@/lib/municipios';
-import { getMunicipiosPolygons, getViasOruro } from '@/lib/osm-services';
 import MapControls from './MapControls';
 
 const tileUrls: Record<string, string> = {
@@ -81,7 +80,7 @@ export default function MapaOruro({ selected, filtroEstado, busqueda, counts, ro
     markerLayer.current = L.layerGroup().addTo(map);
     selectedLayer.current = L.layerGroup().addTo(map);
 
-    getMunicipiosPolygons().then((geojson) => {
+    fetch('/data/municipios-oruro.geojson').then(r => r.json()).then((geojson) => {
       if (!mapInstance.current || !geojson?.features?.length) return;
       const layer = L.layerGroup().addTo(mapInstance.current);
       geojson.features.forEach((f: any) => {
@@ -103,7 +102,7 @@ export default function MapaOruro({ selected, filtroEstado, busqueda, counts, ro
       if (!polygonsVisibleRef.current) layer.remove();
     });
 
-    getViasOruro().then((geojson) => {
+    fetch('/data/vias-oruro.geojson').then(r => r.json()).then((geojson) => {
       if (!mapInstance.current || !geojson?.features?.length) return;
       const layer = L.layerGroup().addTo(mapInstance.current);
       geojson.features.forEach((f: any) => {
