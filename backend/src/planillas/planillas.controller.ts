@@ -21,7 +21,7 @@ export class PlanillasController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('operador')
+  @Roles('operador', 'admin')
   @Post()
   create(@Body() body: { proyectoId: number; numero: number; periodo: string; fechaInicio: string; fechaFin: string; tipo?: 'BASE' | 'CAO'; planillaBaseId?: number }) {
     return this.service.create({
@@ -32,7 +32,7 @@ export class PlanillasController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('operador')
+  @Roles('operador', 'admin')
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() body: { periodo?: string; fechaInicio?: string; fechaFin?: string }) {
     const data: { periodo?: string; fechaInicio?: Date; fechaFin?: Date } = {};
@@ -43,7 +43,7 @@ export class PlanillasController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('operador')
+  @Roles('operador', 'admin')
   @Patch(':id/items')
   updateItems(@Param('id', ParseIntPipe) id: number, @Body() body: { items: any[] }) {
     return this.service.updateItems(id, body.items);
@@ -109,7 +109,7 @@ export class PlanillasController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('operador')
+  @Roles('operador', 'admin')
   @Patch(':id/sync-from-items')
   syncFromItems(@Param('id', ParseIntPipe) id: number) {
     return this.service.syncFromItems(id);

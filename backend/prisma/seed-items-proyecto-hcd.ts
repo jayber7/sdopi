@@ -94,18 +94,44 @@ async function main() {
     console.log(`  Creado ${r.codigo} - ${r.nombre}: ${items.length} items (id rubro=${rubro.id})`);
   }
 
-  // Sync BASE planilla items if exists
-  const base = await prisma.planillaCAO.findFirst({ where: { proyectoId: proyecto.id, tipo: 'BASE', estado: 'borrador' } });
-  if (base) {
-    const allItems = await prisma.item.findMany({ where: { rubro: { proyectoId: proyecto.id } } });
-    const existingAvances = await prisma.avanceItem.findMany({ where: { planillaId: base.id, itemId: { not: null } } });
+  // Ensure BASE planilla exists
+  const allItems = await prisma.item.findMany({ where: { rubro: { proyectoId: proyecto.id } }, orderBy: { numero: 'asc' } });
+  let base = await prisma.planillaCAO.findFirst({ where: { proyectoId: proyecto.id, tipo: 'BASE' } });
+  if (!base) {
+    base = await prisma.planillaCAO.create({
+      data: {
+        tipo: 'BASE', numero: 0, periodo: 'PLANILLA BASE - DATOS DE CONTRATO',
+        fechaInicio: proyecto.ordenProceder ?? new Date(),
+        fechaFin: proyecto.fechaConclusion ?? new Date(),
+        estado: 'borrador',
+        proyectoId: proyecto.id,
+        avances: {
+          create: allItems.map(i => ({
+            itemId: i.id, descripcion: i.descripcion, unidad: i.unidad,
+            precioUnitario: i.precioUnitario, cantidadContrato: i.cantidadContrato,
+            cantidad: 0, monto: 0, avancePct: 0, aprobado: true,
+          })),
+        },
+      },
+    });
+    console.log(`  Creada planilla BASE id=${base.id} con ${allItems.length} avances`);
+  } else if (base!.estado === 'borrador') {
+    const existingAvances = await prisma.avanceItem.findMany({ where: { planillaId: base!.id, itemId: { not: null } } });
     const existingByItemId = new Set(existingAvances.map(a => a.itemId!));
     const toCreate = allItems.filter(i => !existingByItemId.has(i.id)).map(i => ({
-      planillaId: base.id, itemId: i.id, cantidad: 0, monto: 0, avancePct: 0,
+      planillaId: base!.id, itemId: i.id, cantidad: 0, monto: 0, avancePct: 0,
     }));
     if (toCreate.length) {
       await prisma.avanceItem.createMany({ data: toCreate });
       console.log(`  Sincronizados ${toCreate.length} avances en planilla BASE`);
+    }
+  } else if (base!.estado === 'aprobado') {
+    const derivados = await prisma.planillaCAO.count({ where: { planillaBaseId: base!.id } });
+    if (derivados === 0) {
+      await prisma.planillaCAO.update({ where: { id: base!.id }, data: { estado: 'borrador' } });
+      console.log(`  Planilla BASE id=${base!.id} revertida a borrador`);
+    } else {
+      console.log(`  Planilla BASE id=${base!.id} aprobada con ${derivados} CAOs — no se puede revertir`);
     }
   }
 

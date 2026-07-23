@@ -28,14 +28,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" className={`${serif.variable} ${sans.variable}`}>
       <body>
         <AppRouterCacheProvider>
-          <JefaturaProvider>
-            <ThemeToggleProvider>
-              <AuthProvider>
+          <AuthProvider>
+            <JefaturaProvider>
+              <ThemeToggleProvider>
                 <Header />
                 {children}
-              </AuthProvider>
-            </ThemeToggleProvider>
-          </JefaturaProvider>
+              </ThemeToggleProvider>
+            </JefaturaProvider>
+          </AuthProvider>
         </AppRouterCacheProvider>
       </body>
     </html>

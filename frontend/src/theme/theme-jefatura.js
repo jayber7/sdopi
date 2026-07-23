@@ -39,8 +39,9 @@ const CONFIG = {
   },
 };
 
-export function buildTheme(jefatura) {
+export function buildTheme(jefatura, role) {
   const c = CONFIG[jefatura] || CONFIG.DI;
+  const isOperador = role === 'operador';
 
   const base = createTheme({
     palette: {
@@ -76,9 +77,12 @@ export function buildTheme(jefatura) {
       MuiCssBaseline: {
         styleOverrides: {
           body: {
-            background: c.bodyGradient,
+            background: isOperador
+              ? `linear-gradient(180deg, rgba(0,219,180,0.07) 0%, transparent 20%), ${c.bodyGradient}`
+              : c.bodyGradient,
             backgroundAttachment: 'fixed',
             minHeight: '100vh',
+            ...(isOperador && { borderTop: '3px solid #00dbb4' }),
           },
           '&::-webkit-scrollbar': { width: 6 },
           '&::-webkit-scrollbar-track': { bgcolor: 'rgba(255,255,255,0.02)' },

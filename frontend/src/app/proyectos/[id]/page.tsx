@@ -237,8 +237,8 @@ export default function ProyectoDetailPage() {
 
   const canPUpdate = can(user, 'proyectos', 'update');
   const canPDelete = can(user, 'proyectos', 'delete');
-  const canPCreate = can(user, 'planillas', 'create');
-  const canPUpdate2 = can(user, 'planillas', 'update');
+  const canPCreate = can(user, 'planillas', 'create') || user?.role === 'admin';
+  const canPUpdate2 = can(user, 'planillas', 'update') || user?.role === 'admin';
   const canAprobar = can(user, 'planillas', 'aprobar');
   const canPDelete2 = can(user, 'planillas', 'delete');
   const canEVerificar = can(user, 'evidencias', 'verificar');
@@ -469,7 +469,7 @@ export default function ProyectoDetailPage() {
                     size="small"
                   />
                 ))}
-                {isBorrador && canPCreate && !showForm && (
+                {(isBorrador || !proyecto.planillas.some(p => p.tipo === 'BASE')) && canPCreate && !showForm && (
                   <Chip icon={<AddIcon />} label="Nueva" onClick={() => setShowForm(true)} variant="outlined" size="small" sx={{ color: 'rgba(0,219,180,0.7)', borderColor: 'rgba(0,219,180,0.3)' }} />
                 )}
                 {isAdmin && !showManualCao && (
