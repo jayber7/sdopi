@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, Fragment, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import * as exifr from 'exifr';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -11,7 +14,6 @@ import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -22,6 +24,14 @@ import RestoreIcon from '@mui/icons-material/Restore';
 import BlockIcon from '@mui/icons-material/Block';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import EditIcon from '@mui/icons-material/Edit';
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
 
 const API = '/api';
 
@@ -152,8 +162,8 @@ function groupAvances(avs: any[]) {
   const map = new Map<string, { codigo: string; nombre: string; rubroId: number | null; avances: any[] }>();
   for (const a of avs) {
     const rubro = a.item?.rubro;
-    const rc = a.rubroCodigo ?? rubro?.codigo ?? 'SIN';
-    const rn = a.rubroNombre ?? rubro?.nombre ?? 'Sin Rubro';
+    const rc = a.rubroCod ?? a.item?.rubro?.codigo ?? 'SIN';
+    const rn = a.rubroNombre ?? a.item?.rubro?.nombre ?? 'Sin Rubro';
     const rubroId = rubro?.id ?? null;
     const key = rubro ? `r${rubro.id}` : rc;
     if (!map.has(key)) map.set(key, { codigo: rc, nombre: rn, rubroId, avances: [] });
@@ -162,8 +172,9 @@ function groupAvances(avs: any[]) {
   return [...map.values()];
 }
 
-export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh }: {
+export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh, proyectoLat, proyectoLng }: {
   planilla: any; avanceItemId: number | null; onClose: () => void; onRefresh: () => void;
+  proyectoLat?: number | null; proyectoLng?: number | null;
 }) {
   const [evidencias, setEvidencias] = useState<Evidencia[]>([]);
   const [loading, setLoading] = useState(false);
@@ -171,6 +182,21 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh }: 
   const [uploadCategoria, setUploadCategoria] = useState('VISTA_GENERAL');
   const [uploadDesc, setUploadDesc] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [editDescId, setEditDescId] = useState<number | null>(null);
+  const [editDescVal, setEditDescVal] = useState('');
+  const [uploadExif, setUploadExif] = useState<{
+    latitud: number | null; longitud: number | null;
+    fechaCaptura: string | null; dispositivo: string | null; modeloCamara: string | null;
+  } | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [mainMapReady, setMainMapReady] = useState(false);
+
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<L.Map | null>(null);
+  const mainMapRef = useRef<HTMLDivElement>(null);
+  const mainMapInstance = useRef<L.Map | null>(null);
 
   const avance = avanceItemId ? planilla?.avances?.find((a: any) => a.id === avanceItemId) : null;
 
@@ -185,13 +211,88 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh }: 
     return () => ac.abort();
   }, [planilla?.id, avanceItemId]);
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
+  }, [previewUrl]);
+
+  useEffect(() => {
+    if (!mainMapReady || !mainMapRef.current) return;
+    if (proyectoLat == null || proyectoLng == null) return;
+    if (mainMapInstance.current) { mainMapInstance.current.remove(); mainMapInstance.current = null; }
+    const center: [number, number] = [proyectoLat!, proyectoLng!];
+    const map = L.map(mainMapRef.current, { zoomControl: false }).setView(center, 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+    L.circleMarker(center, { radius: 10, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.7 })
+      .addTo(map).bindTooltip('Proyecto');
+    const bounds = L.latLngBounds(center, center);
+    for (const foto of evidencias) {
+      if (foto.exifLatitud == null || foto.exifLongitud == null) continue;
+      const color = foto.verificacionEstado === 'VERIFICADO' ? '#22c55e'
+        : foto.verificacionEstado === 'SOSPECHOSO' ? '#f59e0b'
+        : foto.verificacionEstado === 'RECHAZADO' ? '#ef4444' : '#6b7280';
+      L.circleMarker([foto.exifLatitud, foto.exifLongitud], { radius: 7, color, fillColor: color, fillOpacity: 0.7 })
+        .addTo(map).bindTooltip(`${foto.verificacionEstado}${foto.verificacionDistancia != null ? ` · ${foto.verificacionDistancia}m` : ''}`);
+      bounds.extend([foto.exifLatitud, foto.exifLongitud]);
+    }
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+    setTimeout(() => map.invalidateSize(), 100);
+    mainMapInstance.current = map;
+    return () => { map.remove(); mainMapInstance.current = null; };
+  }, [mainMapReady, evidencias, proyectoLat, proyectoLng]);
+
+  useEffect(() => {
+    if (!expandedFoto || !mapReady || !mapRef.current) return;
+    const foto = evidencias.find(e => e.id === expandedFoto);
+    if (!foto?.exifTieneGPS || proyectoLat == null || proyectoLng == null) return;
+    if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; }
+    const map = L.map(mapRef.current, { zoomControl: false }).setView([proyectoLat, proyectoLng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+    L.circleMarker([proyectoLat, proyectoLng], { radius: 10, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.7 })
+      .addTo(map).bindTooltip('Proyecto');
+    if (foto.exifLatitud != null && foto.exifLongitud != null) {
+      L.circleMarker([foto.exifLatitud, foto.exifLongitud], { radius: 8, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.7 })
+        .addTo(map).bindTooltip('Foto');
+      const bounds = L.latLngBounds([proyectoLat, proyectoLng], [foto.exifLatitud, foto.exifLongitud]);
+      map.fitBounds(bounds, { padding: [40, 40] });
+      if (foto.verificacionDistancia != null) {
+        L.polyline([[proyectoLat, proyectoLng], [foto.exifLatitud, foto.exifLongitud]], { color: '#f59e0b', weight: 2, dashArray: '6 4' }).addTo(map);
+      }
+    }
+    setTimeout(() => map.invalidateSize(), 100);
+    mapInstance.current = map;
+    return () => { map.remove(); mapInstance.current = null; };
+  }, [expandedFoto, mapReady, proyectoLat, proyectoLng]);
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !planilla || !avanceItemId) return;
+    if (!file) return;
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    try {
+      const ex = await exifr.parse(file);
+      setUploadExif({
+        latitud: ex?.latitude ?? null,
+        longitud: ex?.longitude ?? null,
+        fechaCaptura: ex?.DateTimeOriginal || ex?.CreateDate || null,
+        dispositivo: ex?.Make || null,
+        modeloCamara: ex?.Model || null,
+      });
+    } catch { setUploadExif(null); }
+    e.target.value = '';
+  }
+
+  async function confirmUpload() {
+    if (!selectedFile || !planilla || !avanceItemId) return;
     setUploading(true);
     const formData = new FormData();
-    formData.append('foto', file); formData.append('categoria', uploadCategoria);
+    formData.append('foto', selectedFile);
+    formData.append('categoria', uploadCategoria);
     if (uploadDesc) formData.append('descripcion', uploadDesc);
+    if (uploadExif?.latitud != null) formData.append('exifLat', String(uploadExif.latitud));
+    if (uploadExif?.longitud != null) formData.append('exifLng', String(uploadExif.longitud));
+    if (uploadExif?.fechaCaptura) formData.append('exifFecha', uploadExif.fechaCaptura);
+    if (uploadExif?.dispositivo) formData.append('exifDispositivo', uploadExif.dispositivo);
+    if (uploadExif?.modeloCamara) formData.append('exifModelo', uploadExif.modeloCamara);
     try {
       const pos = await new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
       formData.append('browserGpsLat', String(pos.coords.latitude));
@@ -199,8 +300,28 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh }: 
     } catch {}
     const r = await fetch(`${API}/planillas/${planilla.id}/fotos/${avanceItemId}`, { method: 'POST', credentials: 'include', body: formData });
     setUploading(false);
-    if (r.ok) { const foto = await r.json(); setEvidencias(prev => [foto, ...prev]); onRefresh(); setUploadDesc(''); setUploadCategoria('VISTA_GENERAL'); }
-    else { const err = await r.json().catch(() => ({ message: 'Error al subir foto' })); alert(err.message || 'Error al subir foto'); }
+    if (r.ok) {
+      const foto = await r.json();
+      setEvidencias(prev => [foto, ...prev]);
+      onRefresh();
+      setSelectedFile(null); setPreviewUrl(null); setUploadExif(null); setUploadDesc(''); setUploadCategoria('VISTA_GENERAL');
+    } else { const err = await r.json().catch(() => ({ message: 'Error al subir foto' })); alert(err.message || 'Error al subir foto'); }
+  }
+
+  function cancelUpload() {
+    setSelectedFile(null); setPreviewUrl(null); setUploadExif(null); setUploadDesc(''); setUploadCategoria('VISTA_GENERAL');
+  }
+
+  async function saveDesc(foto: Evidencia) {
+    const r = await fetch(`${API}/evidencias/${foto.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ descripcion: editDescVal }), credentials: 'include',
+    });
+    if (r.ok) {
+      const updated = await r.json();
+      setEvidencias(prev => prev.map(e => e.id === foto.id ? updated : e));
+      setEditDescId(null);
+    }
   }
 
   async function handleDelete(id: number) {
@@ -227,36 +348,78 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh }: 
   if (!avanceItemId) return null;
 
   return createPortal((
-    <Dialog open onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open onClose={onClose} maxWidth="xl" fullWidth
+      slotProps={{ transition: { onEntered: () => setMainMapReady(true) } as any }}>
       <DialogTitle sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontSize: '1rem', pr: 6 }}>
         Evidencia Fotográfica — Item N°{avance?.item?.numero ?? '?'}: {avance?.descripcion ?? avance?.item?.descripcion ?? ''}
         <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}><CloseIcon /></IconButton>
       </DialogTitle>
       <DialogContent>
+        {/* Map */}
+        {proyectoLat != null && proyectoLng != null && (
+          <Box ref={mainMapRef} sx={{ width: '100%', height: 220, borderRadius: 1.5, overflow: 'hidden', mb: 2 }} />
+        )}
+
         {/* Upload form */}
         {isBorrador && (
           <Card variant="outlined" sx={{ mb: 3, borderStyle: 'dashed' }}>
             <CardContent>
               <Typography variant="subtitle2" sx={{ mb: 1.5, fontFamily: 'var(--font-serif), Georgia, serif' }}>Agregar Foto</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
-                <Button variant="contained" component="label" size="small" startIcon={<CameraAltIcon />} disabled={uploading}>
-                  Tomar Foto / Subir
-                  <input type="file" accept="image/jpeg,image/png" capture="environment" onChange={handleUpload} hidden />
-                </Button>
-                {uploading && <CircularProgress size={20} sx={{ color: 'rgba(100,180,255,0.5)' }} />}
-              </Box>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField select label="Categoría" value={uploadCategoria} onChange={e => setUploadCategoria(e.target.value)} size="small" sx={{ minWidth: 160 }}>
-                  <MenuItem value="VISTA_GENERAL">Vista General</MenuItem>
-                  <MenuItem value="DETALLE_CONSTRUCCION">Detalle Construcción</MenuItem>
-                  <MenuItem value="MATERIAL">Material</MenuItem>
-                  <MenuItem value="EQUIPO">Equipo</MenuItem>
-                  <MenuItem value="PERSONAL">Personal</MenuItem>
-                  <MenuItem value="ANTES">Antes</MenuItem>
-                  <MenuItem value="DESPUES">Después</MenuItem>
-                </TextField>
-                <TextField label="Descripción (opcional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} size="small" fullWidth />
-              </Box>
+              {!selectedFile ? (
+                <>
+                  <Button variant="contained" component="label" size="small" startIcon={<CameraAltIcon />}>
+                    Tomar Foto / Subir
+                    <input type="file" accept="image/jpeg,image/png" capture="environment" onChange={handleFileSelect} hidden />
+                  </Button>
+                  <Box sx={{ display: 'flex', gap: 2, mt: 1.5 }}>
+                    <TextField select label="Categoría" value={uploadCategoria} onChange={e => setUploadCategoria(e.target.value)} size="small" sx={{ minWidth: 160 }}>
+                      <MenuItem value="VISTA_GENERAL">Vista General</MenuItem>
+                      <MenuItem value="DETALLE_CONSTRUCCION">Detalle Construcción</MenuItem>
+                      <MenuItem value="MATERIAL">Material</MenuItem>
+                      <MenuItem value="EQUIPO">Equipo</MenuItem>
+                      <MenuItem value="PERSONAL">Personal</MenuItem>
+                      <MenuItem value="ANTES">Antes</MenuItem>
+                      <MenuItem value="DESPUES">Después</MenuItem>
+                    </TextField>
+                    <TextField label="Descripción (opcional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} size="small" fullWidth />
+                  </Box>
+                </>
+              ) : (
+                <>
+                  <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
+                    <Box sx={{ width: 120, height: 90, borderRadius: 1, overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.03)' }}>
+                      <img src={previewUrl!} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </Box>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}>
+                      <TextField select label="Categoría" value={uploadCategoria} onChange={e => setUploadCategoria(e.target.value)} size="small" sx={{ minWidth: 160 }}>
+                        <MenuItem value="VISTA_GENERAL">Vista General</MenuItem>
+                        <MenuItem value="DETALLE_CONSTRUCCION">Detalle Construcción</MenuItem>
+                        <MenuItem value="MATERIAL">Material</MenuItem>
+                        <MenuItem value="EQUIPO">Equipo</MenuItem>
+                        <MenuItem value="PERSONAL">Personal</MenuItem>
+                        <MenuItem value="ANTES">Antes</MenuItem>
+                        <MenuItem value="DESPUES">Después</MenuItem>
+                      </TextField>
+                      <TextField label="Descripción (opcional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} size="small" fullWidth />
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
+                    {uploadExif && (
+                      <Box sx={{ fontSize: '0.75rem', color: 'rgba(150,200,255,0.6)', display: 'flex', flexDirection: 'column', gap: 0.3, flex: 1 }}>
+                        {uploadExif.latitud != null && <span>GPS: {uploadExif.latitud.toFixed(6)}, {uploadExif.longitud?.toFixed(6)}</span>}
+                        {uploadExif.fechaCaptura && <span>Captura: {new Date(uploadExif.fechaCaptura).toLocaleString('es-BO')}</span>}
+                        {uploadExif.dispositivo && <span>Dispositivo: {uploadExif.dispositivo} {uploadExif.modeloCamara ?? ''}</span>}
+                      </Box>
+                    )}
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', ...(uploadExif ? { ml: 'auto' } : {}) }}>
+                      <Button variant="contained" size="small" startIcon={uploading ? <CircularProgress size={16} /> : undefined} onClick={confirmUpload} disabled={uploading}>
+                        {uploading ? 'Guardando...' : 'Guardar'}
+                      </Button>
+                      <Button variant="outlined" size="small" onClick={cancelUpload} disabled={uploading}>Cancelar</Button>
+                    </Box>
+                  </Box>
+                </>
+              )}
             </CardContent>
           </Card>
         )}
@@ -281,7 +444,26 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh }: 
                       <Chip label={foto.verificacionEstado} color={chipColor} size="small" variant="filled" />
                       <Chip label={foto.categoria} size="small" variant="outlined" />
                     </Box>
-                    {foto.descripcion && <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)' }}>{foto.descripcion}</Typography>}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {editDescId === foto.id ? (
+                        <>
+                          <TextField size="small" value={editDescVal} onChange={e => setEditDescVal(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') saveDesc(foto); if (e.key === 'Escape') setEditDescId(null); }}
+                            sx={{ flex: 1 }} slotProps={{ htmlInput: { style: { fontSize: '0.75rem', padding: '4px 8px' } } }} autoFocus />
+                          <Button size="small" variant="contained" sx={{ minWidth: 0, p: 0.5 }} onClick={() => saveDesc(foto)}>✓</Button>
+                          <Button size="small" variant="text" sx={{ minWidth: 0, p: 0.5 }} onClick={() => setEditDescId(null)}>✕</Button>
+                        </>
+                      ) : (
+                        <>
+                          {foto.descripcion && <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)', flex: 1 }}>{foto.descripcion}</Typography>}
+                          {isBorrador && (
+                            <IconButton size="small" onClick={() => { setEditDescId(foto.id); setEditDescVal(foto.descripcion || ''); }} sx={{ color: 'rgba(150,200,255,0.35)', p: 0.3 }}>
+                              <EditIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          )}
+                        </>
+                      )}
+                    </Box>
                     {foto.exifTieneGPS && (
                       <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)' }}>
                         GPS: {foto.exifLatitud?.toFixed(6)}, {foto.exifLongitud?.toFixed(6)}
@@ -318,11 +500,29 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh }: 
 
       {/* Expanded foto modal */}
       {expandedFoto != null && createPortal((
-        <Dialog open onClose={() => setExpandedFoto(null)} maxWidth="xl" slotProps={{ paper: { sx: { background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(4px)', boxShadow: 'none' } } }}>
-          <IconButton onClick={() => setExpandedFoto(null)} sx={{ position: 'absolute', right: 8, top: 8, zIndex: 1, color: 'white' }}><CloseIcon /></IconButton>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', p: 2 }}>
-            <img src={evidencias.find(e => e.id === expandedFoto)?.url} alt="Evidencia ampliada" loading="lazy"
-              style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', borderRadius: 8 }} />
+        <Dialog open onClose={() => { setExpandedFoto(null); setMapReady(false); }} maxWidth="xl"
+          slotProps={{ transition: { onEntered: () => setMapReady(true) } as any, paper: { sx: { background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(4px)', boxShadow: 'none' } } }}>
+          <IconButton onClick={() => { setExpandedFoto(null); setMapReady(false); }} sx={{ position: 'absolute', right: 8, top: 8, zIndex: 1, color: 'white' }}><CloseIcon /></IconButton>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: '80vh', p: 2 }}>
+            <Box sx={{ flex: 1, maxWidth: '70%' }}>
+              <img src={evidencias.find(e => e.id === expandedFoto)?.url} alt="Evidencia ampliada" loading="lazy"
+                style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', borderRadius: 8 }} />
+            </Box>
+            {(() => {
+              const foto = evidencias.find(e => e.id === expandedFoto);
+              if (!foto?.exifTieneGPS || proyectoLat == null || proyectoLng == null) {
+                return (
+                  <Box sx={{ width: { xs: '100%', md: 320 }, height: 320, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, bgcolor: 'rgba(255,255,255,0.03)', color: 'rgba(150,200,255,0.4)', fontSize: '0.75rem', px: 2, textAlign: 'center' }}>
+                    {proyectoLat == null || proyectoLng == null
+                      ? 'El proyecto no tiene coordenadas configuradas'
+                      : 'La foto no contiene datos de ubicación GPS'}
+                  </Box>
+                );
+              }
+              return (
+                <Box ref={mapRef} sx={{ width: { xs: '100%', md: 320 }, height: 320, borderRadius: 2, overflow: 'hidden', flexShrink: 0 }} />
+              );
+            })()}
           </Box>
         </Dialog>
       ), document.body)}

@@ -51,7 +51,7 @@ const baseMunicipios = [
   { nombre: 'Oruro', provincia: 'Cercado', coords: [-17.9647, -67.1060] as [number, number], estado: 'normal' as const, unidad: 'Dirección' },
   { nombre: 'Caracollo', provincia: 'Cercado', coords: [-17.6339, -67.2167] as [number, number], estado: 'normal' as const, unidad: 'UDETRA' },
   { nombre: 'El Choro', provincia: 'Cercado', coords: [-18.3540, -67.2100] as [number, number], estado: 'observado' as const, unidad: 'GF' },
-  { nombre: 'Soracachi', provincia: 'Cercado', coords: [-17.9700, -66.8100] as [number, number], estado: 'normal' as const, unidad: 'UPRAC' },
+  { nombre: 'Soracachi', provincia: 'Cercado', coords: [-17.7639, -67.0272] as [number, number], estado: 'normal' as const, unidad: 'UPRAC' },
   { nombre: 'Challapata', provincia: 'Abaroa', coords: [-18.8990, -66.7690] as [number, number], estado: 'normal' as const, unidad: 'Dirección' },
   { nombre: 'Santuario de Quillacas', provincia: 'Abaroa', coords: [-19.2300, -66.9500] as [number, number], estado: 'observado' as const, unidad: 'GF' },
   { nombre: 'Corque', provincia: 'Carangas', coords: [-18.3430, -67.6880] as [number, number], estado: 'normal' as const, unidad: 'UPRAC' },

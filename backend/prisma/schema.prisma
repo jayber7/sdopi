@@ -81,6 +81,7 @@ model Proyecto {
   updatedAt       DateTime  @updatedAt
   rubros          Rubro[]
   planillas       PlanillaCAO[]
+  boletas         Boleta[]
   desembolsosProgramados DesembolsoProgramado[]
 }
 
@@ -292,4 +293,14 @@ model DesembolsoProgramado {
   proyectoId      Int
   proyecto        Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())
+}
+
+model Boleta {
+  id         Int      @id @default(autoincrement())
+  numero     String
+  fecha      DateTime
+  vigencia   DateTime
+  vencimiento DateTime
+  proyectoId Int
+  proyecto   Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
 }

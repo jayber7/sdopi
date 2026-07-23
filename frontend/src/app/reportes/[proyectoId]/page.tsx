@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
@@ -18,7 +20,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 const API = '/api';
-const fmt = (n: number) => n.toLocaleString('es-BO', { minimumFractionDigits: 2 });
+const fmt = (n: number) => n.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct = (n: number) => (n * 100).toFixed(2) + '%';
 const fdate = (d: string) => new Date(d).toLocaleDateString('es-BO');
 
@@ -62,6 +64,7 @@ const td = { padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.04
 
 export default function ReportesPage() {
   const params = useParams();
+  const router = useRouter();
   const { user } = useAuth();
   const [tab, setTab] = useState<'analisis' | 'certificado' | 'planillas'>('analisis');
   const [analisis, setAnalisis] = useState<AnalisisData | null>(null);
@@ -141,7 +144,10 @@ export default function ReportesPage() {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-            <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <IconButton onClick={() => router.push(`/proyectos/${params.proyectoId}`)} size="small" sx={{ mr: 1, color: 'rgba(150,200,255,0.5)' }}>
+                <ArrowBackIcon />
+              </IconButton>
               <Typography variant="h4" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontWeight: 400, fontSize: '1.25rem' }}>
                 Reportes {hastaCao ? `— hasta CAO N°${hastaCao}` : ''}
               </Typography>

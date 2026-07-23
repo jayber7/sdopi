@@ -9,6 +9,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { EvidenciaService } from './evidencia.service';
 import { UploadFotoDto, RechazarEvidenciaDto } from './dto/upload-foto.dto';
+import { UpdateFotoDto } from './dto/update-foto.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller()
@@ -67,5 +68,12 @@ export class EvidenciaController {
   @Patch('evidencias/:id/restaurar')
   restaurar(@Param('id', ParseIntPipe) id: number) {
     return this.service.restaurar(id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'operador')
+  @Patch('evidencias/:id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFotoDto) {
+    return this.service.update(id, dto);
   }
 }

@@ -174,19 +174,19 @@ export default function Header() {
             </Button>
             {!loading && user && (
               <>
-                <IconButton onClick={async (e) => {
-                    setNotifAnchor(e.currentTarget);
-                    if (notificaciones.length) {
-                      try { await fetch('/api/notificaciones/leer-todas', { method: 'PATCH', credentials: 'include' }); } catch {}
-                      fetchNotificaciones();
-                    }
-                  }}
+                <IconButton onClick={(e) => setNotifAnchor(e.currentTarget)}
                   size="small" sx={{ mr: 0.5 }}>
                   <Badge badgeContent={totalNoLeidas} color="error" invisible={totalNoLeidas === 0}>
                     <NotificationsIcon sx={{ fontSize: 20, color: alpha(theme.palette.text.secondary, 0.5) }} />
                   </Badge>
                 </IconButton>
-                <Menu anchorEl={notifAnchor} open={Boolean(notifAnchor)} onClose={() => setNotifAnchor(null)}
+                <Menu anchorEl={notifAnchor} open={Boolean(notifAnchor)} onClose={() => {
+                    setNotifAnchor(null);
+                    if (notificaciones.length) {
+                      fetch('/api/notificaciones/leer-todas', { method: 'PATCH', credentials: 'include' }).catch(() => {});
+                      fetchNotificaciones();
+                    }
+                  }}
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                   slotProps={{ paper: { sx: { maxHeight: 360, width: 360 } } }}>
@@ -201,7 +201,12 @@ export default function Header() {
                     };
                     const cfg = iconMap[n.tipo] || { icon: <NotificationsIcon sx={{ fontSize: 16 }} />, color: '#aaa', label: 'Notificación' };
                     return (
-                      <MenuItem key={n.id} onClick={() => { setNotifAnchor(null); router.push(`/proyectos/${n.proyectoId}`); }}
+                      <MenuItem key={n.id} onClick={async () => {
+                        setNotifAnchor(null);
+                        await fetch(`/api/notificaciones/${n.id}/leer`, { method: 'PATCH', credentials: 'include' });
+                        fetchNotificaciones();
+                        router.push(`/proyectos/${n.proyectoId}?planilla=${n.planillaId}`);
+                      }}
                         sx={{ flexDirection: 'column', alignItems: 'flex-start', gap: 0.25, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Box sx={{ color: cfg.color }}>{cfg.icon}</Box>

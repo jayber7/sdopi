@@ -36,6 +36,12 @@ export class CatalogController {
     @Body() body: { rubros: { rubroCatalogoId: number; itemCatalogoIds: number[] }[] },
   ) {
     const rubrosExistentes = await this.prisma.rubro.count({ where: { proyectoId } });
+    const ultimoItem = await this.prisma.item.findFirst({
+      where: { rubro: { proyectoId } },
+      orderBy: { numero: 'desc' },
+      select: { numero: true },
+    });
+    let nextNum = (ultimoItem?.numero ?? 0) + 1;
     for (let idx = 0; idx < body.rubros.length; idx++) {
       const r = body.rubros[idx];
       const cat = await this.prisma.rubroCatalogo.findUnique({
@@ -53,7 +59,7 @@ export class CatalogController {
           await this.prisma.item.createMany({
             data: cat.items.map((ci) => ({
               rubroId: existing.id,
-              numero: ci.numero,
+              numero: nextNum++,
               descripcion: ci.descripcion,
               unidad: ci.unidad,
               precioUnitario: 0,
@@ -72,7 +78,7 @@ export class CatalogController {
           await this.prisma.item.createMany({
             data: cat.items.map((ci) => ({
               rubroId: rubro.id,
-              numero: ci.numero,
+              numero: nextNum++,
               descripcion: ci.descripcion,
               unidad: ci.unidad,
               precioUnitario: 0,

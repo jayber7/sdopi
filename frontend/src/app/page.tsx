@@ -199,7 +199,7 @@ export default function CaratulaPage() {
             }}>
               <ConstructionIcon sx={{ fontSize: 18, color: alpha(theme.palette.primary.light, 0.6) }} />
               <Typography sx={{ fontSize: { xs: '0.72rem', md: '0.8rem' }, color: alpha(theme.palette.text.secondary, 0.6), letterSpacing: '0.03em' }}>
-                GOBERNADOR: DR. EDGAR SANCHEZ AGUIRRE
+                GOBERNADOR: ING. EDGAR SANCHEZ AGUIRRE
               </Typography>
             </Box>
 

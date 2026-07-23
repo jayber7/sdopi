@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Fragment, forwardRef, useImperativeHandle, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { can } from '@/lib/permissions';
 import { useJefatura } from '@/context/JefaturaContext';
@@ -42,7 +42,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 const MapPicker = dynamic(() => import('../MapPicker'), { ssr: false });
 
 const API = '/api';
-const fmt = (n: number) => n.toLocaleString('es-BO', { minimumFractionDigits: 2 });
+const fmt = (n: number) => n.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fdate = (d: string) => new Date(d).toLocaleDateString('es-BO');
 
 interface BaseItem { id: number; numero: number; descripcion: string; unidad: string; precioUnitario: number; cantidadContrato: number; montoOriginal: number; rubroId: number }
@@ -90,12 +90,66 @@ const ETAPA_LABEL: Record<string, string> = {
 export default function ProyectoDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { jefatura: jefaturaActual } = useJefatura();
   const { user } = useAuth();
   const [proyecto, setProyecto] = useState<Proyecto | null>(null);
   const [planilla, setPlanilla] = useState<Planilla | null>(null);
-  const [tab, setTab] = useState<'general' | 'planillas' | 'dashboard'>('planillas');
+  const [tab, setTab] = useState<'general' | 'planillas' | 'boletas' | 'dashboard'>('planillas');
   const [showForm, setShowForm] = useState(false);
+  const [boletas, setBoletas] = useState<any[]>([]);
+  const [boletaEditando, setBoletaEditando] = useState<number | null>(null);
+  const [boletaCreando, setBoletaCreando] = useState(false);
+  const [boletaForm, setBoletaForm] = useState({ numero: '', fecha: '', vigencia: '', vencimiento: '' });
+  const [editMontoDisplay, setEditMontoDisplay] = useState('');
+
+  const thBoleta = { background: 'rgba(255,255,255,0.03)', color: 'rgba(150,200,255,0.7)', fontSize: '0.7rem', textTransform: 'uppercase' as const, letterSpacing: '0.05em', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '8px 10px', whiteSpace: 'nowrap' as const };
+  const tdBoleta = { padding: '6px 10px', borderBottom: '1px solid rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.75)', verticalAlign: 'middle' as const };
+
+  const fechaLiteral = (d: string) => new Date(d).toLocaleDateString('es-BO', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  async function fetchBoletas() {
+    if (!proyecto) return;
+    const r = await fetch(`/api/boletas?proyectoId=${proyecto.id}`, { credentials: 'include' });
+    if (r.ok) setBoletas(await r.json());
+  }
+
+  async function initNewBoleta() {
+    if (!proyecto) return;
+    const r = await fetch(`/api/boletas/next-numero?proyectoId=${proyecto.id}`, { credentials: 'include' });
+    const { numero } = r.ok ? await r.json() : { numero: 'BG-0001' };
+    setBoletaForm({ numero, fecha: '', vigencia: '', vencimiento: '' });
+    setBoletaCreando(true);
+  }
+
+  async function createBoleta() {
+    if (!proyecto) return;
+    const r = await fetch('/api/boletas', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proyectoId: proyecto.id, ...boletaForm }), credentials: 'include',
+    });
+    if (r.ok) { await fetchBoletas(); setBoletaCreando(false); }
+    else { const err = await r.json().catch(() => ({ message: 'Error' })); alert(err.message); }
+  }
+
+  function startEditBoleta(b: any) {
+    setBoletaForm({ numero: b.numero, fecha: b.fecha.slice(0, 10), vigencia: b.vigencia.slice(0, 10), vencimiento: b.vencimiento.slice(0, 10) });
+    setBoletaEditando(b.id);
+  }
+
+  async function updateBoleta(id: number) {
+    const r = await fetch(`/api/boletas/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(boletaForm), credentials: 'include',
+    });
+    if (r.ok) { await fetchBoletas(); setBoletaEditando(null); }
+    else { const err = await r.json().catch(() => ({ message: 'Error' })); alert(err.message); }
+  }
+
+  async function deleteBoleta(id: number) {
+    const r = await fetch(`/api/boletas/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (r.ok) await fetchBoletas();
+  }
 
   const dashboardContent = useMemo(() => {
     if (!proyecto) return null;
@@ -207,12 +261,18 @@ export default function ProyectoDetailPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then(async (p) => {
         setProyecto(p);
-        if (p?.planillas?.length) loadPlanilla(p.planillas[0].id);
+        if (p?.planillas?.length) {
+          const planillaId = searchParams.get('planilla');
+          const target = planillaId ? p.planillas.find((pl: any) => pl.id === Number(planillaId)) : null;
+          loadPlanilla(target ? target.id : p.planillas[0].id);
+        }
       })
       .catch((e) => { if (e.name !== 'AbortError') console.error(e); })
       .finally(() => setLoading(false));
     return () => ac.abort();
   }, [params?.id]);
+
+  useEffect(() => { if (tab === 'boletas' && proyecto) fetchBoletas(); }, [tab, proyecto]);
 
   async function loadPlanilla(id: number) {
     const r = await fetch(`${API}/planillas/${id}`, { credentials: 'include' });
@@ -338,12 +398,12 @@ export default function ProyectoDetailPage() {
   }
 
   const estadoChip = (estado: string) => {
-    const map: Record<string, [string, 'warning' | 'info' | 'success' | 'default']> = {
-      borrador: ['Borrador', 'warning'],
-      enviado: ['Enviado', 'info'],
-      aprobado: ['Aprobado', 'success'],
+    const map: Record<string, { label: string; color: 'warning' | 'info' | 'success' | 'default' }> = {
+      borrador: { label: 'Borrador', color: 'warning' },
+      enviado: { label: 'Enviado', color: 'info' },
+      aprobado: { label: 'Aprobado', color: 'success' },
     };
-    return map[estado] || [estado, 'default'];
+    return map[estado] || { label: estado, color: 'default' };
   };
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}><CircularProgress size={32} sx={{ color: 'rgba(100,180,255,0.5)' }} /></Box>;
@@ -352,47 +412,42 @@ export default function ProyectoDetailPage() {
   return (
     <Box sx={{ animation: 'fadeIn 0.3s ease both' }}>
         {/* Project header */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h4" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontWeight: 400 }}>
-                  {proyecto.nombre}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 0.3, color: 'rgba(150,200,255,0.5)' }}>
-                  Contrato: {proyecto.contratoNro} · {proyecto.contratista}
-                </Typography>
-              </Box>
-              <Box sx={{ textAlign: 'right', flexShrink: 0, ml: 2 }}>
-                <Typography variant="body1" sx={{ fontWeight: 600, color: 'rgba(0,219,180,0.8)' }}>Bs {fmt(proyecto.montoContrato)}</Typography>
-                <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)' }}>Sup: {proyecto.supervisor} · Fiscal: {proyecto.fiscal}</Typography>
-              </Box>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-              {(isAdmin || isOper) && <Button onClick={openEdit} startIcon={<EditIcon />} variant="outlined" size="small">Editar proyecto</Button>}
-              {isAdmin && <Button onClick={desactivar} startIcon={<DeleteIcon />} variant="outlined" size="small" color="error">Desactivar proyecto</Button>}
-              <Button onClick={() => router.push(`/reportes/${proyecto.id}`)} startIcon={<AssessmentIcon />} variant="outlined" size="small">Reportes</Button>
+        <Card sx={{ mb: 2 }}>
+          <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+              <Typography variant="h5" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', fontWeight: 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {proyecto.nombre}
+              </Typography>
+              <Typography variant="body1" sx={{ fontWeight: 600, color: 'rgba(0,219,180,0.8)', flexShrink: 0 }}>Bs {fmt(proyecto.montoContrato)}</Typography>
             </Box>
           </CardContent>
         </Card>
 
         {/* Tabs */}
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, '& .MuiTab-root': { minWidth: 120 } }}>
+        <Tabs value={tab} onChange={(_, v) => { if (v === 'reportes') { router.push(`/reportes/${proyecto.id}`); } else { setTab(v); } }} sx={{ mb: 3, minHeight: 36, '& .MuiTab-root': { minWidth: 100, py: 0.5, minHeight: 36 }, '& .Mui-selected': { bgcolor: 'rgba(100,180,255,0.1)', borderRadius: 1 } }}>
           <Tab label="General" value="general" />
           <Tab label={`Planillas (${proyecto.planillas.length})`} value="planillas" />
+          <Tab label="Boletas" value="boletas" />
           <Tab label="Dashboard" value="dashboard" />
+          <Tab label="Reportes" value="reportes" />
         </Tabs>
 
         {tab === 'general' && (
           <Card>
-            <CardContent>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, fontSize: '0.875rem' }}>
+            <CardContent sx={{ py: 0.5, '&:last-child': { pb: 0.5 } }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5, fontSize: '0.875rem' }}>
                 <Typography variant="body2"><Box component="span" sx={{ color: 'rgba(150,200,255,0.5)' }}>Ubicación:</Box> {proyecto.latitud != null && proyecto.longitud != null ? `${proyecto.latitud}, ${proyecto.longitud}` : (proyecto.direccion || '—')}</Typography>
                 <Typography variant="body2"><Box component="span" sx={{ color: 'rgba(150,200,255,0.5)' }}>Orden de Proceder:</Box> {fdate(proyecto.ordenProceder)}</Typography>
                 <Typography variant="body2"><Box component="span" sx={{ color: 'rgba(150,200,255,0.5)' }}>Fecha Conclusión:</Box> {fdate(proyecto.fechaConclusion)}</Typography>
                 <Typography variant="body2"><Box component="span" sx={{ color: 'rgba(150,200,255,0.5)' }}>Días Suspendido:</Box> {proyecto.suspendidoDias}</Typography>
                 <Typography variant="body2"><Box component="span" sx={{ color: 'rgba(150,200,255,0.5)' }}>% Anticipo:</Box> {proyecto.anticipoPct}%</Typography>
                 <Typography variant="body2"><Box component="span" sx={{ color: 'rgba(150,200,255,0.5)' }}>Jefatura:</Box> {proyecto.jefatura}</Typography>
+                <Typography variant="body2"><Box component="span" sx={{ color: 'rgba(150,200,255,0.5)' }}>Contrato:</Box> {proyecto.contratoNro} · {proyecto.contratista}</Typography>
+                <Typography variant="body2"><Box component="span" sx={{ color: 'rgba(150,200,255,0.5)' }}>Supervisor:</Box> {proyecto.supervisor}</Typography>
+                <Typography variant="body2"><Box component="span" sx={{ color: 'rgba(150,200,255,0.5)' }}>Fiscal:</Box> {proyecto.fiscal}</Typography>
+              </Box>
+              <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                {(isAdmin || isOper) && <Button onClick={openEdit} startIcon={<EditIcon />} variant="outlined" size="small">Editar proyecto</Button>}
               </Box>
             </CardContent>
           </Card>
@@ -525,11 +580,79 @@ export default function ProyectoDetailPage() {
           </Box>
         )}
 
+        {tab === 'boletas' && (
+          <Card>
+            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+              <Typography variant="h6" sx={{ fontFamily: 'var(--font-serif), Georgia, serif', textAlign: 'center', mb: 2, fontSize: '0.9375rem' }}>
+                Boletas de Cumplimiento de Contrato
+              </Typography>
+              <Box sx={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ ...thBoleta, textAlign: 'left', width: 120 }}>Nº</th>
+                      <th style={{ ...thBoleta, textAlign: 'left' }}>Fecha</th>
+                      <th style={{ ...thBoleta, textAlign: 'left' }}>Vigencia</th>
+                      <th style={{ ...thBoleta, textAlign: 'left' }}>Vencimiento</th>
+                      <th style={{ ...thBoleta, textAlign: 'center', width: 70 }}>Acc.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {boletas.map(b => (
+                      <tr key={b.id}>
+                        {boletaEditando === b.id ? (
+                          <>
+                            <td style={tdBoleta}><TextField size="small" value={boletaForm.numero} onChange={e => setBoletaForm({ ...boletaForm, numero: e.target.value })} sx={{ width: 110 }} /></td>
+                            <td style={tdBoleta}><TextField type="date" size="small" value={boletaForm.fecha} onChange={e => setBoletaForm({ ...boletaForm, fecha: e.target.value })} sx={{ width: 140 }} /></td>
+                            <td style={tdBoleta}><TextField type="date" size="small" value={boletaForm.vigencia} onChange={e => setBoletaForm({ ...boletaForm, vigencia: e.target.value })} sx={{ width: 140 }} /></td>
+                            <td style={tdBoleta}><TextField type="date" size="small" value={boletaForm.vencimiento} onChange={e => setBoletaForm({ ...boletaForm, vencimiento: e.target.value })} sx={{ width: 140 }} /></td>
+                            <td style={{ ...tdBoleta, textAlign: 'center' }}>
+                              <Button size="small" variant="contained" onClick={async () => { await updateBoleta(b.id); }} sx={{ mr: 0.5, minWidth: 0, p: 0.5 }}><SaveIcon fontSize="small" /></Button>
+                              <Button size="small" variant="text" onClick={() => setBoletaEditando(null)} sx={{ minWidth: 0, p: 0.5 }}>✕</Button>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td style={tdBoleta}>{b.numero}</td>
+                            <td style={tdBoleta}>{fechaLiteral(b.fecha)}</td>
+                            <td style={tdBoleta}>{fechaLiteral(b.vigencia)}</td>
+                            <td style={tdBoleta}>{fechaLiteral(b.vencimiento)}</td>
+                            <td style={{ ...tdBoleta, textAlign: 'center' }}>
+                              <Button size="small" variant="text" onClick={() => startEditBoleta(b)} sx={{ minWidth: 0, p: 0.5, color: 'rgba(150,200,255,0.5)' }}><EditIcon fontSize="small" /></Button>
+                              <Button size="small" variant="text" onClick={async () => { if (confirm('Eliminar boleta?')) { await deleteBoleta(b.id); } }} sx={{ minWidth: 0, p: 0.5, color: 'rgba(255,107,107,0.6)' }}><DeleteIcon fontSize="small" /></Button>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                    {boletaCreando && (
+                      <tr>
+                        <td style={tdBoleta}><TextField size="small" value={boletaForm.numero} onChange={e => setBoletaForm({ ...boletaForm, numero: e.target.value })} sx={{ width: 110 }} /></td>
+                        <td style={tdBoleta}><TextField type="date" size="small" value={boletaForm.fecha} onChange={e => setBoletaForm({ ...boletaForm, fecha: e.target.value })} sx={{ width: 140 }} /></td>
+                        <td style={tdBoleta}><TextField type="date" size="small" value={boletaForm.vigencia} onChange={e => setBoletaForm({ ...boletaForm, vigencia: e.target.value })} sx={{ width: 140 }} /></td>
+                        <td style={tdBoleta}><TextField type="date" size="small" value={boletaForm.vencimiento} onChange={e => setBoletaForm({ ...boletaForm, vencimiento: e.target.value })} sx={{ width: 140 }} /></td>
+                        <td style={{ ...tdBoleta, textAlign: 'center' }}>
+                          <Button size="small" variant="contained" onClick={createBoleta} sx={{ mr: 0.5, minWidth: 0, p: 0.5 }}><SaveIcon fontSize="small" /></Button>
+                          <Button size="small" variant="text" onClick={() => setBoletaCreando(false)} sx={{ minWidth: 0, p: 0.5 }}>✕</Button>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </Box>
+              {!boletaCreando && (
+                <Button variant="outlined" size="small" onClick={initNewBoleta} sx={{ mt: 1.5 }} startIcon={<AddIcon />}>Agregar boleta</Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {tab === 'dashboard' && dashboardContent}
 
         {/* Evidence modals */}
         {evidenciaItemId != null && planilla && (
-          <PanelEvidencias planilla={planilla} avanceItemId={evidenciaItemId} onClose={() => setEvidenciaItemId(null)} onRefresh={() => loadPlanilla(planilla.id)} />
+          <PanelEvidencias planilla={planilla} avanceItemId={evidenciaItemId} onClose={() => setEvidenciaItemId(null)} onRefresh={() => loadPlanilla(planilla.id)}
+            proyectoLat={proyecto?.latitud} proyectoLng={proyecto?.longitud} />
         )}
         {showGeneralEvidencia && planilla && (
           <PanelGeneralEvidencias planilla={planilla} onClose={() => setShowGeneralEvidencia(false)} onOpenItem={(id) => { setShowGeneralEvidencia(false); setTimeout(() => setEvidenciaItemId(id), 50); }} />
@@ -543,7 +666,10 @@ export default function ProyectoDetailPage() {
               <TextField label="Nombre del proyecto" value={editForm.nombre} onChange={e => setEditForm({ ...editForm, nombre: e.target.value })} size="small" fullWidth />
               <TextField label="N° Contrato" value={editForm.contratoNro} onChange={e => setEditForm({ ...editForm, contratoNro: e.target.value })} size="small" fullWidth />
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                <TextField label="Monto Contrato Bs" type="number" value={editForm.montoContrato || ''} onChange={e => setEditForm({ ...editForm, montoContrato: +e.target.value })} size="small" />
+                <TextField label="Monto Contrato Bs" type="text" value={editMontoDisplay !== '' ? editMontoDisplay : (editForm.montoContrato ? fmt(editForm.montoContrato) : '')}
+                  onChange={e => { const raw = e.target.value.replace(/[^0-9,]/g, ''); setEditMontoDisplay(raw); const num = parseFloat(raw.replace(',', '.')); if (!isNaN(num)) setEditForm({ ...editForm, montoContrato: num }); else if (raw === '') setEditForm({ ...editForm, montoContrato: 0 }); }}
+                  onFocus={() => setEditMontoDisplay(editForm.montoContrato ? String(editForm.montoContrato).replace('.', ',') : '')}
+                  onBlur={() => setEditMontoDisplay('')} size="small" />
                 <TextField label="% Anticipo" type="number" value={editForm.anticipoPct} onChange={e => setEditForm({ ...editForm, anticipoPct: +e.target.value })} size="small" />
               </Box>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
@@ -1032,7 +1158,7 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
             <th style={th} colSpan={2}>Avance Anterior</th>
             <th style={th} colSpan={2}>Avance Presente</th>
             <th style={th} colSpan={2}>Avance Acumulado</th>
-            <th style={th} colSpan={2}>% Avance</th>
+            <th style={th} colSpan={2}>% Avance Fís. Item</th>
             <th style={{ ...th, textAlign: 'center', width: 40 }}>Est.</th>
             {actionCol > 0 && <th style={th}>Acción</th>}
           </tr>
@@ -1050,8 +1176,8 @@ function CAOGrid({ planilla, isAdmin, isOper, isSupervisor, onRefresh, onOpenEvi
             <th style={{ ...th, textAlign: 'right' }}>Monto</th>
             <th style={{ ...th, textAlign: 'right' }}>Cant.</th>
             <th style={{ ...th, textAlign: 'right' }}>Monto</th>
-            <th style={{ ...th, textAlign: 'right' }}>Período</th>
-            <th style={{ ...th, textAlign: 'right' }}>Fecha</th>
+            <th style={{ ...th, textAlign: 'right' }}>Del Periodo</th>
+            <th style={{ ...th, textAlign: 'right' }}>A la Fecha</th>
             <th style={{ ...th, width: 40 }}></th>
             {actionCol > 0 && <th style={th}></th>}
           </tr>

@@ -24,6 +24,21 @@ export class UploadFotoDto {
   @Transform(({ value }) => (value ? Number(value) : undefined))
   @IsNumber()
   browserGpsLng?: number;
+
+  @IsOptional() @IsString()
+  exifLat?: string;
+
+  @IsOptional() @IsString()
+  exifLng?: string;
+
+  @IsOptional() @IsString()
+  exifFecha?: string;
+
+  @IsOptional() @IsString()
+  exifDispositivo?: string;
+
+  @IsOptional() @IsString()
+  exifModelo?: string;
 }
 
 export class RechazarEvidenciaDto {

@@ -43,6 +43,8 @@ import ViewListIcon from '@mui/icons-material/ViewList';
 
 const MapPicker = dynamic(() => import('./MapPicker'), { ssr: false });
 
+const fmt = (n: number) => n.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const API = '/api';
 
 interface Item { id: number; numero: number; descripcion: string; unidad: string; montoOriginal: number; }
@@ -91,6 +93,7 @@ export default function ProyectosPage() {
   const [view, setView] = useState<'card' | 'list'>('card');
   const [modal, setModal] = useState<{ open: boolean; edit?: Proyecto }>({ open: false });
   const [form, setForm] = useState({ ...INIT_FORM });
+  const [montoDisplay, setMontoDisplay] = useState('');
   const [search, setSearch] = useState('');
   const [etapaFilter, setEtapaFilter] = useState('');
   const [provinciaFilter, setProvinciaFilter] = useState('');
@@ -245,7 +248,7 @@ export default function ProyectosPage() {
                   </Box>
                   <Box sx={{ textAlign: 'right', flexShrink: 0, ml: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: 'rgba(0,219,180,0.8)' }}>
-                      Bs {p.montoContrato.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
+                      Bs {fmt(p.montoContrato)}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'rgba(150,200,255,0.5)' }}>{p.contratista}</Typography>
                   </Box>
@@ -310,7 +313,7 @@ export default function ProyectosPage() {
                     {p.situacion && <Chip label={ETAPA_LABEL[p.situacion] || p.situacion} size="small" color={ETAPA_COLOR[p.situacion]} sx={{ height: 20, fontSize: '0.65rem' }} />}
                   </TableCell>
                   <TableCell align="right" sx={{ fontWeight: 600, color: 'rgba(0,219,180,0.8)' }}>
-                    {p.montoContrato.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
+                    {fmt(p.montoContrato)}
                   </TableCell>
                   <TableCell sx={{ color: 'rgba(150,200,255,0.5)' }}>{p.contratista}</TableCell>
                   <TableCell>
@@ -353,11 +356,14 @@ export default function ProyectosPage() {
           <TextField label="Nombre del proyecto" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} size="small" fullWidth />
           <TextField label="N° Contrato" value={form.contratoNro} onChange={e => setForm({ ...form, contratoNro: e.target.value })} size="small" fullWidth />
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-            <TextField label="Monto Contrato Bs" type="number" value={form.montoContrato || ''} onChange={e => setForm({ ...form, montoContrato: +e.target.value })} size="small" />
+            <TextField label="Monto Contrato Bs" type="text" value={montoDisplay !== '' ? montoDisplay : (form.montoContrato ? fmt(form.montoContrato) : '')}
+              onChange={e => { const raw = e.target.value.replace(/[^0-9,]/g, ''); setMontoDisplay(raw); const num = parseFloat(raw.replace(',', '.')); if (!isNaN(num)) setForm({ ...form, montoContrato: num }); else if (raw === '') setForm({ ...form, montoContrato: 0 }); }}
+              onFocus={() => setMontoDisplay(form.montoContrato ? String(form.montoContrato).replace('.', ',') : '')}
+              onBlur={() => setMontoDisplay('')} size="small" />
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <TextField label="% Anticipo" type="number" value={form.anticipoPct} onChange={e => setForm({ ...form, anticipoPct: +e.target.value })} size="small" slotProps={{ htmlInput: { min: 0, max: 100, step: 0.01 } }} sx={{ width: 110 }} />
               <Typography variant="body2" sx={{ color: 'rgba(150,200,255,0.7)', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
-                = Bs {(Number(form.montoContrato) * (Number(form.anticipoPct) / 100)).toLocaleString('es-BO', { minimumFractionDigits: 2 })}
+                = Bs {fmt(Number(form.montoContrato) * (Number(form.anticipoPct) / 100))}
               </Typography>
             </Box>
           </Box>

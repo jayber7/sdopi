@@ -49,7 +49,17 @@ export class EvidenciaService {
     const { url, publicId } = await uploadToCloudinary(file.buffer, filename);
 
     // Extract EXIF
-    const exif = await this.exifExtractor.extract(file.buffer);
+    const exif = (await this.exifExtractor.extract(file.buffer))
+      ?? (dto.exifLat ? {
+        latitud: parseFloat(dto.exifLat),
+        longitud: dto.exifLng ? parseFloat(dto.exifLng) : null,
+        altitud: null,
+        fechaCaptura: dto.exifFecha ? new Date(dto.exifFecha) : null,
+        horaCaptura: null,
+        dispositivo: dto.exifDispositivo ?? null,
+        modeloCamara: dto.exifModelo ?? null,
+        tieneGPS: !!(dto.exifLat && dto.exifLng),
+      } : null);
 
     // Geo-verification: EXIF primary, browser fallback
     const verification = this.geoVerification.verify({
@@ -175,6 +185,18 @@ export class EvidenciaService {
     await deleteFromCloudinary(evidencia.publicId);
     await this.prisma.evidenciaFotografica.delete({ where: { id } });
     return { message: 'Evidencia eliminada' };
+  }
+
+  async update(id: number, dto: { descripcion?: string; categoria?: string }) {
+    const evidencia = await this.prisma.evidenciaFotografica.findUnique({ where: { id } });
+    if (!evidencia) throw new NotFoundException('Evidencia no encontrada');
+    const data: any = {};
+    if (dto.descripcion !== undefined) data.descripcion = dto.descripcion || null;
+    if (dto.categoria !== undefined) data.categoria = dto.categoria;
+    return this.prisma.evidenciaFotografica.update({
+      where: { id }, data,
+      include: { avanceItem: { include: { item: true } }, user: { select: { id: true, nombre: true } } },
+    });
   }
 
   async rechazar(id: number, dto: RechazarEvidenciaDto) {

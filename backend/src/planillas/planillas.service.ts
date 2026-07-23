@@ -175,6 +175,14 @@ export class PlanillasService {
             ...(it.rubroNombre !== undefined ? { rubroNombre: it.rubroNombre } : {}),
           },
         });
+        if (existing.itemId && (it.precioUnitario !== undefined || it.cantidadContrato !== undefined)) {
+          const syncPu = it.precioUnitario ?? existing.precioUnitario ?? 0;
+          const syncCc = it.cantidadContrato ?? existing.cantidadContrato ?? 0;
+          await this.prisma.item.update({
+            where: { id: existing.itemId },
+            data: { precioUnitario: syncPu, cantidadContrato: syncCc, montoOriginal: syncPu * syncCc },
+          });
+        }
       } else if (it.itemId) {
         const existing = await this.prisma.avanceItem.findFirst({
           where: { planillaId: id, itemId: it.itemId },
@@ -202,6 +210,14 @@ export class PlanillasService {
               rubroCodigo: it.rubroCodigo, rubroNombre: it.rubroNombre,
             },
           });
+          if (it.itemId && (it.precioUnitario !== undefined || it.cantidadContrato !== undefined)) {
+            const syncPu = it.precioUnitario ?? 0;
+            const syncCc = it.cantidadContrato ?? 0;
+            await this.prisma.item.update({
+              where: { id: it.itemId },
+              data: { precioUnitario: syncPu, cantidadContrato: syncCc, montoOriginal: syncPu * syncCc },
+            });
+          }
         }
       }
     }
