@@ -263,11 +263,30 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh, pr
     return () => { map.remove(); mapInstance.current = null; };
   }, [expandedFoto, mapReady, proyectoLat, proyectoLng]);
 
+  async function compressImage(file: File): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1600;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+          else { width = Math.round(width * MAX / height); height = MAX; }
+        }
+        const c = document.createElement('canvas');
+        c.width = width; c.height = height;
+        const ctx = c.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        c.toBlob(b => resolve(new File([b!], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.75);
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
     try {
       const ex = await exifr.parse(file);
       setUploadExif({
@@ -278,6 +297,9 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh, pr
         modeloCamara: ex?.Model || null,
       });
     } catch { setUploadExif(null); }
+    const compressed = await compressImage(file);
+    setSelectedFile(compressed);
+    setPreviewUrl(URL.createObjectURL(compressed));
     e.target.value = '';
   }
 
