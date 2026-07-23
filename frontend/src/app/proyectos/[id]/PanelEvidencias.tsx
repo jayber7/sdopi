@@ -298,7 +298,12 @@ export function PanelEvidencias({ planilla, avanceItemId, onClose, onRefresh, pr
       formData.append('browserGpsLat', String(pos.coords.latitude));
       formData.append('browserGpsLng', String(pos.coords.longitude));
     } catch {}
-    const r = await fetch(`${API}/planillas/${planilla.id}/fotos/${avanceItemId}`, { method: 'POST', credentials: 'include', body: formData });
+    const fotoUrl = `${API}/planillas/${planilla.id}/fotos/${avanceItemId}`;
+    let r = await fetch(fotoUrl, { method: 'POST', credentials: 'include', body: formData });
+    if (r.status === 503) {
+      await new Promise(res => setTimeout(res, 3000));
+      r = await fetch(fotoUrl, { method: 'POST', credentials: 'include', body: formData });
+    }
     setUploading(false);
     if (r.ok) {
       const foto = await r.json();
