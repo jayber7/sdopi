@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       credentials: 'include',
     });
     setUser(null);
-    window.location.href = '/login';
+    window.location.href = '/';
   }, []);
 
   const canUser = useCallback((resource: Resource, action: Action) => can(user, resource, action), [user]);

@@ -82,7 +82,7 @@ export function buildTheme(jefatura, role) {
               : c.bodyGradient,
             backgroundAttachment: 'fixed',
             minHeight: '100vh',
-            ...(isOperador && { borderTop: '3px solid #00dbb4' }),
+            ...(isOperador && { borderTop: '5px solid #00dbb4', boxShadow: 'inset 0 0 30px rgba(0,219,180,0.12)' }),
           },
           '&::-webkit-scrollbar': { width: 6 },
           '&::-webkit-scrollbar-track': { bgcolor: 'rgba(255,255,255,0.02)' },
